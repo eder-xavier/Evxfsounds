@@ -58,7 +58,6 @@ const MOCK_SONGS = [
 export const MusicProvider = ({ children }) => {
     const [songs, setSongs] = useState([]);
     const [currentSong, setCurrentSong] = useState(null);
-    // isPlaying agora deriva do estado do player, mas mantemos um local para sincronia rápida UI
     const playbackState = usePlaybackState();
     const isPlaying = playbackState.state === State.Playing || playbackState.state === State.Buffering;
 
@@ -66,7 +65,7 @@ export const MusicProvider = ({ children }) => {
     const currentTime = progress.position;
     const duration = progress.duration;
 
-    const [repeatMode, setRepeatModeState] = useState('off'); // 'off', 'one', 'all'
+    const [repeatMode, setRepeatModeState] = useState('off');
     const [shuffle, setShuffle] = useState(false);
     const [playlists, setPlaylists] = useState([]);
     const [sortBy, setSortBy] = useState('name');
@@ -76,30 +75,30 @@ export const MusicProvider = ({ children }) => {
     const [isPlayerSetup, setIsPlayerSetup] = useState(false);
 
     const songsRef = useRef([]);
+    const playCountsRef = useRef({}); // Ref para acesso imediato
+
     useEffect(() => { songsRef.current = songs; }, [songs]);
+    useEffect(() => { playCountsRef.current = playCounts; }, [playCounts]);
 
     useEffect(() => {
-        setupPlayer();
-        requestPermissions();
-        loadPlaylists();
-        loadPlayCounts();
-        loadSortBy();
+        const init = async () => {
+            await setupPlayer();
+            await loadPlayCounts();
+            await loadPlaylists();
+            // Carrega a preferência de ordenação ANTES de carregar as músicas
+            await loadSortBy();
+            // A permissão e carregamento de músicas será chamado após loadSortBy terminar implicitamente
+            // ou podemos chamar explicitamente aqui se loadSortBy não disparar efeito
+            requestPermissions();
+        };
+        init();
 
-        // Listener para atualização de faixa (quando muda automaticamente)
         const sub = TrackPlayer.addEventListener(Event.PlaybackActiveTrackChanged, async (event) => {
             if (event.track) {
-                // Sincronizar currentSong com a faixa atual do TrackPlayer
-                // Precisamos encontrar a música completa no nosso array 'songs' ou reconstruí-la
-                // O objeto 'track' do TrackPlayer tem propriedades limitadas que passamos
-
-                // Usar ref para buscar na lista atualizada
                 const originalSong = songsRef.current.find(s => s.id === event.track.id);
 
                 setCurrentSong(prev => {
                     if (originalSong) return originalSong;
-
-                    // Tenta achar na lista completa para ter todos os metadados
-                    // Se não achar (ex: lista mudou), usa os dados do track mesmo
                     return {
                         ...event.track,
                         id: event.track.id,
@@ -142,7 +141,7 @@ export const MusicProvider = ({ children }) => {
             });
             setIsPlayerSetup(true);
         } catch (error) {
-            console.log('Player setup error (might be already setup):', error);
+            // Player já configurado, ignorar erro
             setIsPlayerSetup(true);
         }
     };
@@ -152,7 +151,9 @@ export const MusicProvider = ({ children }) => {
             const { status } = await MediaLibrary.requestPermissionsAsync();
             if (status === 'granted') {
                 setHasPermission(true);
-                loadSongs();
+                // Passamos o sortBy atual (que pode ter acabado de ser carregado)
+                const savedSort = await AsyncStorage.getItem('sortBy');
+                loadSongs(savedSort || 'name');
             } else {
                 enableDemoMode();
             }
@@ -166,7 +167,7 @@ export const MusicProvider = ({ children }) => {
         setSongs(sortSongs(MOCK_SONGS, sortBy));
     };
 
-    const loadSongs = async () => {
+    const loadSongs = async (currentSortBy = sortBy) => {
         try {
             const { status } = await MediaLibrary.getPermissionsAsync();
             if (status !== 'granted') {
@@ -179,22 +180,31 @@ export const MusicProvider = ({ children }) => {
 
             const media = await MediaLibrary.getAssetsAsync({
                 mediaType: 'audio',
-                first: 1000,
+                first: 2000, // Aumentado limite para garantir que pegue todas
+                sortBy: [MediaLibrary.SortBy.creationTime], // Padrão da lib, nós reordenamos depois
             });
 
-            const songList = media.assets.map((asset) => ({
-                id: asset.id,
-                uri: asset.uri,
-                title: asset.filename.replace(/\.[^/.]+$/, ''),
-                artist: 'Unknown Artist',
-                duration: asset.duration,
-                album: 'Unknown Album',
-                artwork: asset.albumId ? `content://media/external/audio/albumart/${asset.albumId}` : null,
-                dateAdded: asset.creationTime,
-                dateModified: asset.modificationTime,
-            }));
+            const songList = media.assets.map((asset) => {
+                // Tenta construir URI de artwork padrão do Android
+                // Nota: Em Android 10+, isso pode falhar sem permissões específicas, 
+                // mas é a melhor tentativa sem libs nativas extras.
+                // O componente AlbumArt lidará com o fallback se falhar.
+                const artworkUri = asset.albumId ? `content://media/external/audio/albumart/${asset.albumId}` : null;
 
-            setSongs(sortSongs(songList, sortBy));
+                return {
+                    id: asset.id, // Mantém como string se vier da lib
+                    uri: asset.uri,
+                    title: asset.filename.replace(/\.[^/.]+$/, ''),
+                    artist: 'Artista Desconhecido', // MediaLibrary do Expo infelizmente não retorna Artista nativamente em todas versões
+                    duration: asset.duration,
+                    album: 'Álbum Desconhecido',
+                    artwork: artworkUri,
+                    dateAdded: asset.creationTime,
+                    dateModified: asset.modificationTime,
+                };
+            });
+
+            setSongs(sortSongs(songList, currentSortBy));
         } catch (error) {
             console.error('Error loading songs:', error);
             enableDemoMode();
@@ -204,7 +214,11 @@ export const MusicProvider = ({ children }) => {
     const loadPlayCounts = async () => {
         try {
             const saved = await AsyncStorage.getItem('playCounts');
-            if (saved) setPlayCounts(JSON.parse(saved));
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                setPlayCounts(parsed);
+                playCountsRef.current = parsed;
+            }
         } catch (error) { }
     };
 
@@ -212,21 +226,38 @@ export const MusicProvider = ({ children }) => {
         try {
             const saved = await AsyncStorage.getItem('sortBy');
             if (saved) setSortBy(saved);
-        } catch (error) { }
+            return saved;
+        } catch (error) { return null; }
     };
 
     const incrementPlayCount = async (songId) => {
-        const newCounts = { ...playCounts, [songId]: (playCounts[songId] || 0) + 1 };
-        setPlayCounts(newCounts);
-        await AsyncStorage.setItem('playCounts', JSON.stringify(newCounts));
+        // Usa a ref para garantir que temos o valor mais atual mesmo dentro de callbacks rápidos
+        const currentCounts = playCountsRef.current || {};
+        const newCount = (currentCounts[songId] || 0) + 1;
+
+        const newCountsObj = { ...currentCounts, [songId]: newCount };
+
+        setPlayCounts(newCountsObj);
+        playCountsRef.current = newCountsObj;
+
+        await AsyncStorage.setItem('playCounts', JSON.stringify(newCountsObj));
     };
 
     const getTopPlayedSongs = () => {
-        return [...songs]
-            .map(song => ({ ...song, playCount: playCounts[song.id] || 0 }))
-            .filter(song => song.playCount > 0)
+        // Cria uma cópia e ordena
+        // Importante: playCounts usa as chaves como IDs.
+        const counts = playCounts;
+
+        const songsWithPlays = songs.map(song => ({
+            ...song,
+            playCount: counts[song.id] || 0
+        }));
+
+        // Filtra apenas os que tem plays e ordena
+        return songsWithPlays
+            .filter(s => s.playCount > 0)
             .sort((a, b) => b.playCount - a.playCount)
-            .slice(0, 50);
+            .slice(0, 20); // Retorna top 20
     };
 
     const deleteSong = async (songId) => {
@@ -260,11 +291,15 @@ export const MusicProvider = ({ children }) => {
         if (!isPlayerSetup) return;
 
         try {
+            // Se playlistContext for passado (ex: shuffle ou playlist específica), usa ele.
+            // Se não, usa a lista de músicas ATUAL (que já está ordenada conforme a tela principal)
             const queue = playlistContext || songs;
+
             const trackIndex = queue.findIndex(s => s.id === song.id);
 
-            // Otimização: Verificar se a fila já está carregada
             const currentQueue = await TrackPlayer.getQueue();
+            // Verifica se é a mesma fila para otimização
+            // Compara IDs da primeira música e tamanho da fila
             const isSameQueue = currentQueue.length === queue.length &&
                 currentQueue.length > 0 &&
                 currentQueue[0].id === queue[0].id;
@@ -278,7 +313,7 @@ export const MusicProvider = ({ children }) => {
                     url: s.uri,
                     title: s.title,
                     artist: s.artist || 'Desconhecido',
-                    artwork: s.artwork,
+                    artwork: s.artwork, // Passa a URI da artwork para o player (notificação)
                     duration: s.duration
                 }));
 
@@ -335,15 +370,10 @@ export const MusicProvider = ({ children }) => {
     };
 
     const toggleShuffle = () => {
-        // TrackPlayer não tem shuffle nativo robusto que reordena a fila sem perder o índice atual facilmente
-        // Mas podemos implementar reordenando a fila. Por simplicidade, vamos manter o estado visual
-        // e numa implementação futura reordenar a fila do TrackPlayer.
-        // Por enquanto, apenas toggle visual
         setShuffle(!shuffle);
-        // TODO: Implementar shuffle real no TrackPlayer (TrackPlayer.remove e TrackPlayer.add em ordem aleatória)
+        // Implementação futura: Reordenar fila real do TrackPlayer
     };
 
-    // ... Funções de Playlist (createPlaylist, addToPlaylist, etc) mantidas iguais ...
     const loadPlaylists = async () => {
         try {
             const saved = await AsyncStorage.getItem('playlists');
@@ -425,11 +455,7 @@ export const MusicProvider = ({ children }) => {
 
     const playShuffle = async (songsToShuffle) => {
         if (!songsToShuffle || songsToShuffle.length === 0) return;
-
-        // Embaralhar array
         const shuffled = [...songsToShuffle].sort(() => Math.random() - 0.5);
-
-        // Tocar a primeira do embaralhado, mas passando a fila embaralhada como contexto
         await playSong(shuffled[0], shuffled);
         setShuffle(true);
     };
