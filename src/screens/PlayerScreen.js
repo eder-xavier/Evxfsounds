@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import { useTheme } from '../context/ThemeContext';
 import { useMusic } from '../context/MusicContext';
+import { useLanguage } from '../context/LanguageContext';
 import { SPACING, FONT_SIZES, BORDER_RADIUS } from '../constants/colors';
 import { AlbumArt } from '../components/AlbumArt';
 import { CustomAlert } from '../components/CustomAlert';
@@ -23,6 +24,7 @@ const { width } = Dimensions.get('window');
 
 export const PlayerScreen = ({ navigation }) => {
     const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const {
         currentSong,
         isPlaying,
@@ -89,22 +91,23 @@ export const PlayerScreen = ({ navigation }) => {
     const handleDeleteFromDevice = () => {
         setShowOptions(false);
         showAlert(
-            'Excluir Arquivo',
-            'Tem certeza que deseja DELETAR PERMANENTEMENTE este arquivo do dispositivo? Esta ação não pode ser desfeita!',
+            t('deleteFromDevice'),
+            t('confirmDeleteFromDevice').replace('{count}', 1),
             [
-                { text: 'Cancelar', style: 'cancel' },
+                { text: t('cancel'), style: 'cancel' },
                 {
-                    text: 'Excluir Permanentemente',
+                    text: t('delete'),
                     style: 'destructive',
                     onPress: async () => {
-                        const success = await deleteFromDevice(currentSong.id, currentSong.uri);
+                        const success = await deleteFromDevice(currentSong.id);
                         if (success) {
                             navigation.goBack();
+                            showAlert(t('success'), t('deleteSuccess'));
                         } else {
-                            showAlert('Erro', 'Não foi possível excluir o arquivo.');
+                            showAlert(t('error'), t('deleteError'));
                         }
-                    }
-                }
+                    },
+                },
             ]
         );
     };
@@ -113,7 +116,7 @@ export const PlayerScreen = ({ navigation }) => {
         addToPlaylist(playlist.id, currentSong);
         setShowPlaylistSelector(false);
         setShowOptions(false);
-        showAlert('Sucesso', `Música adicionada à playlist "${playlist.name}"!`);
+        showAlert(t('success'), `${t('addedTo')} "${playlist.name}"!`);
     };
 
     if (!currentSong) {
@@ -193,11 +196,12 @@ export const PlayerScreen = ({ navigation }) => {
                     maximumValue={duration || 1}
                     onSlidingStart={() => setIsSliding(true)}
                     onValueChange={(value) => setSliderValue(value)}
-                    onSlidingComplete={(value) => {
+                    onSlidingComplete={async (value) => {
                         setIsSeeking(true);
                         setIsSliding(false);
-                        seekTo(value);
-                        setTimeout(() => setIsSeeking(false), 1000);
+                        await seekTo(value);
+                        setSliderValue(value);
+                        setTimeout(() => setIsSeeking(false), 800);
                     }}
                     minimumTrackTintColor={theme.progressBar}
                     maximumTrackTintColor={theme.progressBg}
@@ -292,7 +296,7 @@ export const PlayerScreen = ({ navigation }) => {
                             }}
                         >
                             <Ionicons name="add-circle-outline" size={24} color={theme.text} />
-                            <Text style={[styles.modalOptionText, { color: theme.text }]}>Adicionar à Playlist</Text>
+                            <Text style={[styles.modalOptionText, { color: theme.text }]}>{t('addToPlaylist')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -300,14 +304,14 @@ export const PlayerScreen = ({ navigation }) => {
                             onPress={handleDeleteFromDevice}
                         >
                             <Ionicons name="trash-outline" size={24} color={theme.error} />
-                            <Text style={[styles.modalOptionText, { color: theme.error }]}>Excluir do Dispositivo</Text>
+                            <Text style={[styles.modalOptionText, { color: theme.error }]}>{t('deleteFromDevice')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
                             style={styles.cancelButton}
                             onPress={() => setShowOptions(false)}
                         >
-                            <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>Cancelar</Text>
+                            <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>{t('cancel')}</Text>
                         </TouchableOpacity>
                     </View>
                 </TouchableOpacity>
@@ -327,7 +331,7 @@ export const PlayerScreen = ({ navigation }) => {
                 >
                     <View style={[styles.modalContent, { backgroundColor: theme.surface, maxHeight: '50%' }]}>
                         <View style={styles.modalHeader}>
-                            <Text style={[styles.modalTitle, { color: theme.text }]}>Escolha uma Playlist</Text>
+                            <Text style={[styles.modalTitle, { color: theme.text }]}>{t('selectPlaylist') || 'Escolha uma Playlist'}</Text>
                         </View>
 
                         <ScrollView>
@@ -343,7 +347,7 @@ export const PlayerScreen = ({ navigation }) => {
                             ))}
                             {playlists.length === 0 && (
                                 <Text style={{ padding: 20, textAlign: 'center', color: theme.textSecondary }}>
-                                    Nenhuma playlist criada.
+                                    {t('noPlaylists')}
                                 </Text>
                             )}
                         </ScrollView>
@@ -352,7 +356,7 @@ export const PlayerScreen = ({ navigation }) => {
                             style={styles.cancelButton}
                             onPress={() => setShowPlaylistSelector(false)}
                         >
-                            <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>Cancelar</Text>
+                            <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>{t('cancel')}</Text>
                         </TouchableOpacity>
                     </View>
                 </TouchableOpacity>

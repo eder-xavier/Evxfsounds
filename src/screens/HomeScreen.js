@@ -138,27 +138,20 @@ export const HomeScreen = ({ navigation }) => {
 
     const handleDeleteFromDevice = () => {
         showAlert(
-            'Excluir do Dispositivo',
-            `Deseja DELETAR PERMANENTEMENTE ${selectedSongs.length} música(s) do dispositivo?\n\nEsta ação não pode ser desfeita e os arquivos serão removidos permanentemente!`,
+            t('deleteFromDevice'),
+            t('confirmDeleteFromDevice').replace('{count}', selectedSongs.length),
             [
-                { text: 'Cancelar', style: 'cancel' },
+                { text: t('cancel'), style: 'cancel' },
                 {
-                    text: 'Excluir Permanentemente',
+                    text: t('delete'),
                     style: 'destructive',
                     onPress: async () => {
-                        let successCount = 0;
-                        for (const songId of selectedSongs) {
-                            const song = songs.find(s => s.id === songId);
-                            if (song) {
-                                const success = await deleteFromDevice(songId, song.uri);
-                                if (success) successCount++;
-                            }
-                        }
+                        const success = await deleteFromDevice(selectedSongs);
                         cancelSelection();
-                        if (successCount > 0) {
-                            showAlert('Sucesso', `${successCount} música(s) deletada(s) do dispositivo.`);
+                        if (success) {
+                            showAlert(t('success'), t('deleteSuccess'));
                         } else {
-                            showAlert('Erro', 'Não foi possível excluir as músicas.');
+                            showAlert(t('error'), t('deleteError'));
                         }
                     },
                 },

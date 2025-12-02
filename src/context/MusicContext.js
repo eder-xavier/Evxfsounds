@@ -271,43 +271,39 @@ export const MusicProvider = ({ children }) => {
         await AsyncStorage.setItem('playlists', JSON.stringify(updatedPlaylists));
     };
 
-    const deleteFromDevice = async (songId, songUri) => {
+    const deleteFromDevice = async (songIdsInput) => {
+        const songIds = Array.isArray(songIdsInput) ? songIdsInput : [songIdsInput];
+
         try {
-            // Para o player se estiver tocando esta música
-            if (currentSong?.id === songId) {
+            // Stop player if it's playing any of these songs
+            if (currentSong && songIds.includes(currentSong.id)) {
                 await TrackPlayer.reset();
                 setCurrentSong(null);
             }
 
-            // Deleta do dispositivo usando MediaLibrary
-            const assets = await MediaLibrary.getAssetsAsync({
-                mediaType: 'audio',
-                first: 1,
+            // Delete from device using MediaLibrary
+            await MediaLibrary.deleteAssetsAsync(songIds);
+
+            // Remove from local list using functional update to ensure consistency
+            setSongs(prevSongs => prevSongs.filter(s => !songIds.includes(s.id)));
+
+            // Remove from playlists
+            setPlaylists(prevPlaylists => {
+                const updated = prevPlaylists.map(pl => ({
+                    ...pl,
+                    songs: pl.songs.filter(s => !songIds.includes(s.id))
+                }));
+                AsyncStorage.setItem('playlists', JSON.stringify(updated));
+                return updated;
             });
 
-            const assetToDelete = assets.assets.find(a => a.id === songId);
-
-            if (assetToDelete) {
-                await MediaLibrary.deleteAssetsAsync([assetToDelete]);
-            }
-
-            // Remove da lista local
-            const updatedSongs = songs.filter(s => s.id !== songId);
-            setSongs(updatedSongs);
-
-            // Remove das playlists
-            const updatedPlaylists = playlists.map(pl => ({
-                ...pl,
-                songs: pl.songs.filter(s => s.id !== songId)
-            }));
-            setPlaylists(updatedPlaylists);
-            await AsyncStorage.setItem('playlists', JSON.stringify(updatedPlaylists));
-
-            // Remove da contagem de plays
-            const newPlayCounts = { ...playCounts };
-            delete newPlayCounts[songId];
-            setPlayCounts(newPlayCounts);
-            await AsyncStorage.setItem('playCounts', JSON.stringify(newPlayCounts));
+            // Remove from play count
+            setPlayCounts(prevCounts => {
+                const newCounts = { ...prevCounts };
+                songIds.forEach(id => delete newCounts[id]);
+                AsyncStorage.setItem('playCounts', JSON.stringify(newCounts));
+                return newCounts;
+            });
 
             return true;
         } catch (error) {

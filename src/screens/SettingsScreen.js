@@ -79,7 +79,7 @@ export const SettingsScreen = () => {
                     icon: 'information-circle',
                     label: t('version'),
                     type: 'info',
-                    value: '1.0.13',
+                    value: '1.0.14',
                 },
                 {
                     icon: 'musical-notes',

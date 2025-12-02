@@ -110,16 +110,9 @@ export const PlaylistDetailScreen = ({ route, navigation }) => {
                     text: t('delete'),
                     style: 'destructive',
                     onPress: async () => {
-                        let successCount = 0;
-                        for (const songId of selectedSongs) {
-                            const song = playlist.songs.find(s => s.id === songId);
-                            if (song) {
-                                const success = await deleteFromDevice(songId, song.uri);
-                                if (success) successCount++;
-                            }
-                        }
+                        const success = await deleteFromDevice(selectedSongs);
                         cancelSelection();
-                        if (successCount > 0) {
+                        if (success) {
                             showAlert(t('success'), t('deleteSuccess'));
                         } else {
                             showAlert(t('error'), t('deleteError'));
