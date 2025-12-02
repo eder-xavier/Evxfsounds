@@ -56,16 +56,16 @@ export const PlayerScreen = ({ navigation }) => {
     });
 
     // Estados para o Slider (Fix de delay)
+    // Estados para o Slider (Fix de delay)
     const [sliderValue, setSliderValue] = useState(0);
     const [isSliding, setIsSliding] = useState(false);
-    const [isSeeking, setIsSeeking] = useState(false);
 
     // Atualiza o slider apenas se o usuário não estiver arrastando
     useEffect(() => {
-        if (!isSliding && !isSeeking) {
+        if (!isSliding) {
             setSliderValue(currentTime);
         }
-    }, [currentTime, isSliding, isSeeking]);
+    }, [currentTime, isSliding]);
 
     const showAlert = (title, message, buttons = [{ text: 'OK', onPress: () => { } }]) => {
         setAlertConfig({ visible: true, title, message, buttons });
@@ -135,7 +135,7 @@ export const PlayerScreen = ({ navigation }) => {
                 <View style={styles.emptyContainer}>
                     <Ionicons name="musical-notes-outline" size={64} color={theme.textSecondary} />
                     <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                        Nenhuma música tocando
+                        {t('noSongPlaying')}
                     </Text>
                 </View>
             </View>
@@ -157,7 +157,7 @@ export const PlayerScreen = ({ navigation }) => {
                     <Ionicons name="chevron-down" size={28} color={theme.text} />
                 </TouchableOpacity>
 
-                <Text style={[styles.headerTitle, { color: theme.text }]}>Tocando Agora</Text>
+                <Text style={[styles.headerTitle, { color: theme.text }]}>{t('nowPlaying')}</Text>
 
                 <TouchableOpacity
                     style={styles.headerButton}
@@ -193,15 +193,18 @@ export const PlayerScreen = ({ navigation }) => {
                     style={styles.slider}
                     value={sliderValue}
                     minimumValue={0}
-                    maximumValue={duration || 1}
+                    maximumValue={duration > 0 ? duration : 1}
                     onSlidingStart={() => setIsSliding(true)}
-                    onValueChange={(value) => setSliderValue(value)}
-                    onSlidingComplete={async (value) => {
-                        setIsSeeking(true);
-                        setIsSliding(false);
-                        await seekTo(value);
+                    onValueChange={(value) => {
+                        if (!isSliding) setIsSliding(true);
                         setSliderValue(value);
-                        setTimeout(() => setIsSeeking(false), 800);
+                    }}
+                    onSlidingComplete={async (value) => {
+                        await seekTo(value);
+                        // Pequeno delay para evitar pulo visual
+                        setTimeout(() => {
+                            setIsSliding(false);
+                        }, 800);
                     }}
                     minimumTrackTintColor={theme.progressBar}
                     maximumTrackTintColor={theme.progressBg}
@@ -285,7 +288,7 @@ export const PlayerScreen = ({ navigation }) => {
                 >
                     <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
                         <View style={styles.modalHeader}>
-                            <Text style={[styles.modalTitle, { color: theme.text }]}>Opções</Text>
+                            <Text style={[styles.modalTitle, { color: theme.text }]}>{t('options')}</Text>
                         </View>
 
                         <TouchableOpacity
@@ -331,7 +334,7 @@ export const PlayerScreen = ({ navigation }) => {
                 >
                     <View style={[styles.modalContent, { backgroundColor: theme.surface, maxHeight: '50%' }]}>
                         <View style={styles.modalHeader}>
-                            <Text style={[styles.modalTitle, { color: theme.text }]}>{t('selectPlaylist') || 'Escolha uma Playlist'}</Text>
+                            <Text style={[styles.modalTitle, { color: theme.text }]}>{t('selectPlaylist')}</Text>
                         </View>
 
                         <ScrollView>

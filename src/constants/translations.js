@@ -31,6 +31,10 @@ export const translations = {
         // Player
         unknownArtist: 'Artista Desconhecido',
         unknownAlbum: 'Álbum Desconhecido',
+        nowPlaying: 'Tocando Agora',
+        noSongPlaying: 'Nenhuma música tocando',
+        options: 'Opções',
+        selectPlaylist: 'Escolha uma Playlist',
 
         // Playlists
         playlists: 'Playlists',
@@ -107,6 +111,10 @@ export const translations = {
         // Player
         unknownArtist: 'Unknown Artist',
         unknownAlbum: 'Unknown Album',
+        nowPlaying: 'Now Playing',
+        noSongPlaying: 'No song playing',
+        options: 'Options',
+        selectPlaylist: 'Select a Playlist',
 
         // Playlists
         playlists: 'Playlists',
@@ -183,6 +191,10 @@ export const translations = {
         // Player
         unknownArtist: 'Artiste Inconnu',
         unknownAlbum: 'Album Inconnu',
+        nowPlaying: 'Lecture en cours',
+        noSongPlaying: 'Aucune chanson en lecture',
+        options: 'Options',
+        selectPlaylist: 'Choisir une Playlist',
 
         // Playlists
         playlists: 'Playlists',

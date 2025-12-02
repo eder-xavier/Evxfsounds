@@ -6,13 +6,13 @@
    - **Problema:** Ao selecionar várias músicas para excluir, apenas a primeira era deletada.
    - **Solução:** `MusicContext.js` foi refatorado para processar exclusões em lote (batch) e atualizar o estado de uma só vez. `HomeScreen` e `PlaylistDetailScreen` foram atualizados para usar essa nova lógica.
 
-2. ✅ **Slider do Player Travado**:
-   - **Problema:** O usuário não conseguia arrastar o slider livremente.
-   - **Solução:** Lógica do slider simplificada no `PlayerScreen.js` com delay estratégico para evitar conflito entre o gesto do usuário e a atualização automática do tempo.
+2. ✅ **Slider do Player Travado (Refinado)**:
+   - **Problema:** O slider não respondia ao toque ou pulava.
+   - **Solução:** Lógica do slider no `PlayerScreen.js` foi reescrita para garantir que o gesto do usuário tenha prioridade absoluta sobre a atualização automática, com delay de sincronização após soltar.
 
-3. ✅ **Arquivos Corrompidos**:
-   - **Problema:** Falhas na edição corromperam `MusicContext.js` e `PlayerScreen.js`.
-   - **Solução:** Arquivos foram completamente restaurados e validados.
+3. ✅ **Traduções Faltantes no Player**:
+   - **Problema:** Textos como "Tocando Agora" e "Opções" estavam em hardcode.
+   - **Solução:** Adicionadas chaves de tradução e aplicadas no `PlayerScreen.js`.
 
 ---
 
@@ -39,7 +39,13 @@
 - Abra o **Player**.
 - Comece a tocar uma música.
 - Tente arrastar a bolinha do progresso para o meio ou fim.
-- **Resultado Esperado:** A bolinha deve seguir seu dedo suavemente. Ao soltar, a música deve pular para aquele ponto sem "voltar" para trás.
+- **Resultado Esperado:** A bolinha deve seguir seu dedo suavemente e ficar onde você soltou por um instante antes de continuar.
+
+### 3. Teste de Traduções
+- Abra o Player.
+- Verifique se o título diz "Tocando Agora" (ou "Now Playing").
+- Clique nos três pontos (...).
+- Verifique se o título do modal é "Opções" (ou "Options").
 
 ---
 
