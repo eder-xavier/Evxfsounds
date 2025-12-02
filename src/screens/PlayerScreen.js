@@ -56,13 +56,14 @@ export const PlayerScreen = ({ navigation }) => {
     // Estados para o Slider (Fix de delay)
     const [sliderValue, setSliderValue] = useState(0);
     const [isSliding, setIsSliding] = useState(false);
+    const [isSeeking, setIsSeeking] = useState(false);
 
     // Atualiza o slider apenas se o usuário não estiver arrastando
     useEffect(() => {
-        if (!isSliding) {
+        if (!isSliding && !isSeeking) {
             setSliderValue(currentTime);
         }
-    }, [currentTime, isSliding]);
+    }, [currentTime, isSliding, isSeeking]);
 
     const showAlert = (title, message, buttons = [{ text: 'OK', onPress: () => { } }]) => {
         setAlertConfig({ visible: true, title, message, buttons });
@@ -193,8 +194,10 @@ export const PlayerScreen = ({ navigation }) => {
                     onSlidingStart={() => setIsSliding(true)}
                     onValueChange={(value) => setSliderValue(value)}
                     onSlidingComplete={(value) => {
+                        setIsSeeking(true);
                         setIsSliding(false);
                         seekTo(value);
+                        setTimeout(() => setIsSeeking(false), 1000);
                     }}
                     minimumTrackTintColor={theme.progressBar}
                     maximumTrackTintColor={theme.progressBg}

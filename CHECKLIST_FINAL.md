@@ -1,107 +1,55 @@
-# ✅ CHECKLIST COMPLETO - CORREÇÕES A APLICAR
+# ✅ CHECKLIST COMPLETO - CORREÇÕES E NOVAS FEATURES (ATUALIZADO)
 
-## 📋 ARQUIVOS CRIADOS COM INSTRUÇÕES:
+## 📋 NOVAS FUNCIONALIDADES ADICIONADAS:
 
-1. ✅ `MUSICCONTEXT_DELETE_FUNCTION.txt` - Função deleteFromDevice
-2. ✅ `PLAYERSCREEN_FIXES.txt` - Fix slider + botão excluir
-3. ✅ `PLAYLISTDETAILSCREEN_FIXES.txt` - Botão excluir em playlists
-4. ✅ `COMPLETE_DELETE_GUIDE.md` - Guia geral
-
----
-
-## 🔧 ORDEM DE APLICAÇÃO:
-
-### 1️⃣ **MusicContext.js** (Cback-end)
-📄 Arquivo: `MUSICCONTEXT_DELETE_FUNCTION.txt`
-
-- [ ] Adicionar função `deleteFromDevice` logo após `deleteSong` (linha ~272)
-- [ ] Adicionar `deleteFromDevice` no Provider value (linha ~498, após `deleteSong`)
-
-**Resultado:** Função disponível globalmente para deletar músicas do dispositivo
+1. ✅ **Excluir do Dispositivo na HomeScreen**: Agora é possível excluir múltiplas músicas diretamente da tela principal (seleção múltipla).
+2. ✅ **Adicionar Músicas na Playlist**: Botão dedicado na tela de detalhes da playlist para adicionar músicas facilmente.
+3. ✅ **Traduções Completas**: Suporte a idiomas (PT, EN, FR) em todas as telas, incluindo "Mais Tocadas" e modais.
+4. ✅ **Correções de UI**:
+   - Slider do player com movimento suave e sem delay.
+   - Imagens (Artwork) corrigidas no Player e Playlists.
+   - Layout do modal de adicionar músicas ajustado para não cortar no topo.
 
 ---
 
-### 2️⃣ **PlayerScreen.js** (Fix slider + Delete)
-📄 Arquivo: `PLAYERSCREEN_FIXES.txt`
+## 🔧 RESUMO DAS ALTERAÇÕES RECENTES:
 
-- [ ] Adicionar imports (`useEffect`, `CustomAlert`)
-- [ ] Adicionar estados (`alertConfig`, `sliderValue`, `isSliding`)
-- [ ] Adicionar `useEffect` para controlar slider
-- [ ] Adicionar função `showAlert`
-- [ ] Adicionar função `handleDeleteFromDevice`
-- [ ] Modificar `handleAddToPlaylist` para usar `showAlert`
-- [ ] Trocar `<Slider>` para usar estado local
-- [ ] Trocar display de tempo para usar `sliderValue`
-- [ ] Modificar botão "Excluir Música" no modal para chamar `handleDeleteFromDevice`
-- [ ] Adicionar `<CustomAlert>` antes do `</View>` final
+### 1️⃣ **HomeScreen.js**
+- Adicionado botão "Excluir do Dispositivo" na toolbar de seleção.
+- Implementada lógica de exclusão múltipla com confirmação.
 
-**Resultado:** 
-- Slider sem delay ✅
-- Botão "Excluir do Dispositivo" funcionando ✅
+### 2️⃣ **PlaylistDetailScreen.js**
+- Adicionado botão "Adicionar Músicas" no header.
+- Implementado modal de seleção de músicas.
+- Corrigido layout do modal (padding para status bar).
+- Aplicadas traduções em todos os textos.
 
----
+### 3️⃣ **PlayerScreen.js**
+- Refinada lógica do Slider (`isSeeking`) para evitar "pulos" e permitir seek suave.
+- Corrigido bug da imagem sumida (`songUri` no `AlbumArt`).
 
-### 3️⃣ **PlaylistDetailScreen.js** (Delete em playlists)
-📄 Arquivo: `PLAYLISTDETAILSCREEN_FIXES.txt`
+### 4️⃣ **TopPlayedScreen.js**
+- Aplicadas traduções em todos os textos.
 
-- [ ] Adicionar `deleteFromDevice` no `useMusic()`
-- [ ] Adicionar função `handleDeleteFromDevice`
-- [ ] Adicionar botão "Excluir do Dispositivo" na toolbar de seleção
+### 5️⃣ **PlaylistsScreen.js**
+- Corrigida imagem da capa da playlist (usando `AlbumArt`).
 
-**Resultado:** Deletar múltiplas músicas do dispositivo a partir de uma playlist ✅
-
----
-
-## 🎯 LOCAIS ONDE "EXCLUIR DO DISPOSITIVO" APARECE:
-
-| Local | Quando Aparece | Quantidade |
-|-------|----------------|------------|
-| **PlayerScreen** | Ao abrir uma música (3 pontos) | 1 música |
-| **PlaylistDetailScreen** | Ao selecionar músicas | Múltiplas |
-| **HomeScreen** | ❌ NÃO APARECE | - |
-
----
-
-## ⚠️ OBSERVAÇÕES IMPORTANTES:
-
-1. **HomeScreen NÃO tem botão de excluir do dispositivo**
-   - Seria muito perigoso permitir deletar múltiplos arquivos da tela principal
-   - Usuário pode adicionar a playlist ou fazer outras ações
-
-2. **Sempre mostrar confirmação**
-   - Modal de confirmação com aviso claro
-   - Texto: "Esta ação não pode ser desfeita!"
-   
-3. **Slider do PlayerScreen**
-   - Fix essencial para boa UX
-   - Sem delay ao arrastar a barra
-   - Usa estado local `sliderValue` ao invés de `currentTime` diretamente
-
-4. **CustomAlert em todos os lugares**
-   - Substitui `Alert.alert` nativo
-   - Visual consistente com o tema do app
+### 6️⃣ **LanguageContext.js / translations.js**
+- Adicionadas todas as chaves de tradução faltantes.
 
 ---
 
 ## 🧪 TESTE APÓS APLICAR:
 
-### PlayerScreen:
-- [ ] Slider responde instantaneamente sem delay
-- [ ] Ao arrastar, o tempo muda suavemente
-- [ ] Botão "..." abre modal de opções
-- [ ] "Excluir do Dispositivo" abre confirmação
-- [ ] Após confirmar, arquivo é deletado e volta para HomeScreen
-
-### PlaylistDetailScreen:
-- [ ] Long press seleciona música
-- [ ] Aparece toolbar com 3 botões
-- [ ] "Excluir do Dispositivo" abre confirmação
-- [ ] Após confirmar, músicas são deletadas
-- [ ] Mensagem de sucesso aparece
+### Novas Features:
+- [ ] **HomeScreen**: Selecione várias músicas -> Clique na lixeira -> Confirme exclusão.
+- [ ] **PlaylistDetailScreen**: Clique em "Adicionar Músicas" -> Selecione músicas -> Adicione.
+- [ ] **Traduções**: Mude o idioma nas configurações e verifique se "Mais Tocadas" e os modais mudam de idioma.
+- [ ] **Player**: Arraste a barra de progresso. Deve ser suave e não pular de volta imediatamente.
 
 ---
 
-## 🚀 DEPOIS DE APLICAR TUDO:
+## 🚀 PRÓXIMO PASSO:
 
 ```bash
 cd android
@@ -109,18 +57,3 @@ cd android
 ```
 
 APK final estará em: `android\app\build\outputs\apk\release\app-release.apk`
-
----
-
-## ✨ RESULTADO FINAL:
-
-- ✅ Slider do player sem lag
-- ✅ Deletar música do dispositivo no PlayerScreen
-- ✅ Deletar múltiplas músicas no PlaylistDetailScreen
-- ✅ Alerts visuais consistentes
-- ✅ Confirmações antes de ações destrutivas
-- ✅ UX profissional e segura
-
----
-
-**Boa sorte com a aplicação! Se tiver dúvidas, consulte os arquivos `.txt` específicos.**

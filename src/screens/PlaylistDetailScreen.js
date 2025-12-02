@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { useMusic } from '../context/MusicContext';
+import { useLanguage } from '../context/LanguageContext';
 import { SongItem } from '../components/SongItem';
 import { MiniPlayer } from '../components/MiniPlayer';
 import { SPACING, FONT_SIZES, BORDER_RADIUS } from '../constants/colors';
@@ -23,6 +24,7 @@ export const PlaylistDetailScreen = ({ route, navigation }) => {
     const { playlist: initialPlaylist } = route.params;
     const { theme, isDarkMode } = useTheme();
     const insets = useSafeAreaInsets();
+    const { t } = useLanguage();
     const { currentSong, playSong, removeFromPlaylist, renamePlaylist, reorderPlaylist, playlists, playShuffle, deleteFromDevice, addMultipleToPlaylist, songs } = useMusic();
 
     const playlist = playlists.find(p => p.id === initialPlaylist.id) || initialPlaylist;
@@ -80,12 +82,12 @@ export const PlaylistDetailScreen = ({ route, navigation }) => {
 
     const handleRemoveSelected = () => {
         showAlert(
-            'Remover Músicas',
-            `Deseja remover ${selectedSongs.length} músicas desta playlist?`,
+            t('removeFromPlaylist'),
+            t('confirmRemoveFromPlaylist').replace('{count}', selectedSongs.length),
             [
-                { text: 'Cancelar', style: 'cancel' },
+                { text: t('cancel'), style: 'cancel' },
                 {
-                    text: 'Remover',
+                    text: t('remove'),
                     style: 'destructive',
                     onPress: async () => {
                         for (const songId of selectedSongs) {
@@ -100,12 +102,12 @@ export const PlaylistDetailScreen = ({ route, navigation }) => {
 
     const handleDeleteFromDevice = () => {
         showAlert(
-            'Excluir do Dispositivo',
-            `Deseja DELETAR PERMANENTEMENTE ${selectedSongs.length} música(s) do dispositivo?\n\nEsta ação não pode ser desfeita e os arquivos serão removidos permanentemente!`,
+            t('deleteFromDevice'),
+            t('confirmDeleteFromDevice').replace('{count}', selectedSongs.length),
             [
-                { text: 'Cancelar', style: 'cancel' },
+                { text: t('cancel'), style: 'cancel' },
                 {
-                    text: 'Excluir Permanentemente',
+                    text: t('delete'),
                     style: 'destructive',
                     onPress: async () => {
                         let successCount = 0;
@@ -118,9 +120,9 @@ export const PlaylistDetailScreen = ({ route, navigation }) => {
                         }
                         cancelSelection();
                         if (successCount > 0) {
-                            showAlert('Sucesso', `${successCount} música(s) deletada(s) do dispositivo.`);
+                            showAlert(t('success'), t('deleteSuccess'));
                         } else {
-                            showAlert('Erro', 'Não foi possível excluir as múscias.');
+                            showAlert(t('error'), t('deleteError'));
                         }
                     },
                 },
@@ -151,7 +153,7 @@ export const PlaylistDetailScreen = ({ route, navigation }) => {
         addMultipleToPlaylist(playlist.id, songsToAddObjects);
         setShowAddSongsModal(false);
         setSongsToAdd([]);
-        showAlert('Sucesso', `${songsToAdd.length} músicas adicionadas!`);
+        showAlert(t('success'), `${songsToAdd.length} ${t('songs')} ${t('addedTo')}`);
     };
 
     const toggleSongToAdd = (songId) => {
@@ -172,17 +174,17 @@ export const PlaylistDetailScreen = ({ route, navigation }) => {
                 onRequestClose={() => setShowAddSongsModal(false)}
             >
                 <View style={[styles.container, { backgroundColor: theme.background }]}>
-                    <View style={[styles.topBar, { backgroundColor: theme.surface, borderBottomColor: theme.border, paddingTop: SPACING.md }]}>
+                    <View style={[styles.topBar, { backgroundColor: theme.surface, borderBottomColor: theme.border, paddingTop: insets.top + SPACING.md, height: 'auto', paddingBottom: SPACING.md }]}>
                         <TouchableOpacity onPress={() => setShowAddSongsModal(false)}>
-                            <Text style={{ color: theme.primary, fontSize: FONT_SIZES.lg }}>Cancelar</Text>
+                            <Text style={{ color: theme.primary, fontSize: FONT_SIZES.lg }}>{t('cancel')}</Text>
                         </TouchableOpacity>
-                        <Text style={[styles.title, { color: theme.text }]}>Adicionar Músicas</Text>
+                        <Text style={[styles.title, { color: theme.text }]}>{t('addSongsTitle')}</Text>
                         <TouchableOpacity
                             onPress={handleAddSongsToPlaylist}
                             disabled={songsToAdd.length === 0}
                         >
                             <Text style={{ color: songsToAdd.length > 0 ? theme.primary : theme.textSecondary, fontSize: FONT_SIZES.lg, fontWeight: 'bold' }}>
-                                Adicionar ({songsToAdd.length})
+                                {t('add')} ({songsToAdd.length})
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -229,7 +231,7 @@ export const PlaylistDetailScreen = ({ route, navigation }) => {
                 <Ionicons name="pencil" size={20} color={theme.textSecondary} />
             </TouchableOpacity>
             <Text style={[styles.songCount, { color: theme.textSecondary }]}>
-                {playlist.songs.length} {playlist.songs.length === 1 ? 'música' : 'músicas'}
+                {playlist.songs.length} {playlist.songs.length === 1 ? t('song') : t('songs')}
             </Text>
 
             <TouchableOpacity
@@ -238,7 +240,7 @@ export const PlaylistDetailScreen = ({ route, navigation }) => {
             >
                 <Ionicons name="add" size={20} color={theme.primary} />
                 <Text style={{ color: theme.primary, fontWeight: '600', marginLeft: 8 }}>
-                    Adicionar Músicas
+                    {t('addSongsTitle')}
                 </Text>
             </TouchableOpacity>
 
@@ -253,7 +255,7 @@ export const PlaylistDetailScreen = ({ route, navigation }) => {
                     >
                         <Ionicons name="shuffle" size={20} color={theme.surface} />
                         <Text style={{ color: theme.surface, fontWeight: '600', marginLeft: 8 }}>
-                            Aleatório
+                            {t('shuffle')}
                         </Text>
                     </TouchableOpacity>
 
@@ -270,7 +272,7 @@ export const PlaylistDetailScreen = ({ route, navigation }) => {
                             color={isReordering ? theme.surface : theme.primary}
                         />
                         <Text style={{ color: isReordering ? theme.surface : theme.primary, fontWeight: '600', marginLeft: 8 }}>
-                            {isReordering ? "Concluir" : "Reordenar"}
+                            {isReordering ? t('done') : t('reorder')}
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -316,12 +318,12 @@ export const PlaylistDetailScreen = ({ route, navigation }) => {
         >
             <View style={styles.modalOverlay}>
                 <View style={[styles.modalContainer, { backgroundColor: theme.surface }]}>
-                    <Text style={[styles.modalTitle, { color: theme.text }]}>Renomear Playlist</Text>
+                    <Text style={[styles.modalTitle, { color: theme.text }]}>{t('renamePlaylist')}</Text>
                     <TextInput
                         style={[styles.input, { color: theme.text, borderColor: theme.border, backgroundColor: theme.background }]}
                         value={newPlaylistName}
                         onChangeText={setNewPlaylistName}
-                        placeholder="Nome da playlist"
+                        placeholder={t('playlistName')}
                         placeholderTextColor={theme.textSecondary}
                         autoFocus
                     />
@@ -330,13 +332,13 @@ export const PlaylistDetailScreen = ({ route, navigation }) => {
                             style={[styles.modalButton, { backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border }]}
                             onPress={() => setShowRenameModal(false)}
                         >
-                            <Text style={{ color: theme.text }}>Cancelar</Text>
+                            <Text style={{ color: theme.text }}>{t('cancel')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.modalButton, { backgroundColor: theme.primary }]}
                             onPress={handleRename}
                         >
-                            <Text style={{ color: theme.surface }}>Salvar</Text>
+                            <Text style={{ color: theme.surface }}>{t('save')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -421,10 +423,10 @@ export const PlaylistDetailScreen = ({ route, navigation }) => {
                 <View style={styles.emptyContainer}>
                     <Ionicons name="musical-notes-outline" size={64} color={theme.textSecondary} />
                     <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                        Playlist vazia
+                        {t('emptyPlaylist')}
                     </Text>
                     <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
-                        Adicione músicas mantendo pressionado na tela principal
+                        {t('emptyPlaylistSubtext')}
                     </Text>
                 </View>
             ) : (

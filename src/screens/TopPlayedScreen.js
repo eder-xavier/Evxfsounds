@@ -5,12 +5,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { useMusic } from '../context/MusicContext';
+import { useLanguage } from '../context/LanguageContext';
 import { SongItem } from '../components/SongItem';
 import { SPACING, FONT_SIZES, BORDER_RADIUS } from '../constants/colors';
 
 export const TopPlayedScreen = ({ navigation }) => {
     const { theme, isDarkMode } = useTheme();
     const insets = useSafeAreaInsets();
+    const { t } = useLanguage();
     const { getTopPlayedSongs, playSong, currentSong, playShuffle } = useMusic();
     const topSongs = getTopPlayedSongs();
     const [expandedStats, setExpandedStats] = useState(false);
@@ -67,7 +69,7 @@ export const TopPlayedScreen = ({ navigation }) => {
                                 {topSongs.length}
                             </Text>
                             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
-                                Músicas
+                                {t('songs')}
                             </Text>
                         </View>
                         <View style={styles.statItem}>
@@ -76,7 +78,7 @@ export const TopPlayedScreen = ({ navigation }) => {
                                 {getTotalPlays()}
                             </Text>
                             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
-                                Reproduções
+                                {t('plays')}
                             </Text>
                         </View>
                         {topSongs.length > 0 && (
@@ -99,7 +101,7 @@ export const TopPlayedScreen = ({ navigation }) => {
                         onPress={() => playShuffle(topSongs)}
                     >
                         <Ionicons name="shuffle" size={20} color="#FFF" />
-                        <Text style={styles.shuffleButtonText}>Tocar Aleatório</Text>
+                        <Text style={styles.shuffleButtonText}>{t('playRandom')}</Text>
                     </TouchableOpacity>
                 )}
             </LinearGradient>
@@ -140,10 +142,10 @@ export const TopPlayedScreen = ({ navigation }) => {
                     <Ionicons name="stats-chart" size={32} color={theme.primary} />
                     <View style={styles.headerTextContainer}>
                         <Text style={[styles.headerTitle, { color: theme.text }]}>
-                            Mais Tocadas
+                            {t('topPlayed')}
                         </Text>
                         <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-                            Suas músicas favoritas
+                            {t('favorites')}
                         </Text>
                     </View>
                 </View>
@@ -162,10 +164,10 @@ export const TopPlayedScreen = ({ navigation }) => {
                         >
                             <Ionicons name="headset-outline" size={80} color={theme.textSecondary} />
                             <Text style={[styles.emptyText, { color: theme.text }]}>
-                                Comece a ouvir música!
+                                {t('startListening')}
                             </Text>
                             <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
-                                Suas músicas mais tocadas aparecerão aqui
+                                {t('topPlayedSubtext')}
                             </Text>
                         </LinearGradient>
                     </View>
