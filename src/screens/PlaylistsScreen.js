@@ -18,6 +18,7 @@ import { useMusic } from '../context/MusicContext';
 import { useLanguage } from '../context/LanguageContext';
 import { SPACING, FONT_SIZES, BORDER_RADIUS } from '../constants/colors';
 import { CustomAlert } from '../components/CustomAlert';
+import { AlbumArt } from '../components/AlbumArt';
 
 export const PlaylistsScreen = ({ navigation }) => {
     const { theme, isDarkMode } = useTheme();
@@ -94,11 +95,13 @@ export const PlaylistsScreen = ({ navigation }) => {
             onLongPress={() => openOptions(item)}
         >
             <View style={[styles.playlistIcon, { backgroundColor: theme.primary, overflow: 'hidden' }]}>
-                {item.songs.length > 0 && item.songs[0].artwork ? (
-                    <Image
-                        source={{ uri: item.songs[0].artwork }}
-                        style={{ width: '100%', height: '100%' }}
-                        resizeMode="cover"
+                {item.songs.length > 0 ? (
+                    <AlbumArt
+                        uri={item.songs[0].artwork}
+                        songUri={item.songs[0].uri}
+                        size={56}
+                        iconSize={28}
+                        style={{ borderRadius: 0 }}
                     />
                 ) : (
                     <Ionicons name="list" size={28} color={theme.surface} />

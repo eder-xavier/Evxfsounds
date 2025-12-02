@@ -166,6 +166,7 @@ export const PlayerScreen = ({ navigation }) => {
             <View style={styles.artworkContainer}>
                 <AlbumArt
                     uri={currentSong.artwork}
+                    songUri={currentSong.uri}
                     size={width - 80}
                     style={{ borderRadius: BORDER_RADIUS.xl }}
                     backgroundColor={theme.primary}

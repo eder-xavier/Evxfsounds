@@ -23,7 +23,7 @@ export const PlaylistDetailScreen = ({ route, navigation }) => {
     const { playlist: initialPlaylist } = route.params;
     const { theme, isDarkMode } = useTheme();
     const insets = useSafeAreaInsets();
-    const { currentSong, playSong, removeFromPlaylist, renamePlaylist, reorderPlaylist, playlists, playShuffle, deleteFromDevice } = useMusic();
+    const { currentSong, playSong, removeFromPlaylist, renamePlaylist, reorderPlaylist, playlists, playShuffle, deleteFromDevice, addMultipleToPlaylist, songs } = useMusic();
 
     const playlist = playlists.find(p => p.id === initialPlaylist.id) || initialPlaylist;
 
@@ -32,6 +32,8 @@ export const PlaylistDetailScreen = ({ route, navigation }) => {
     const [isReordering, setIsReordering] = useState(false);
     const [showRenameModal, setShowRenameModal] = useState(false);
     const [newPlaylistName, setNewPlaylistName] = useState(playlist.name);
+    const [showAddSongsModal, setShowAddSongsModal] = useState(false);
+    const [songsToAdd, setSongsToAdd] = useState([]);
     const [alertConfig, setAlertConfig] = useState({ visible: false, title: '', message: '', buttons: [] });
 
     const showAlert = (title, message, buttons = [{ text: 'OK', onPress: () => { } }]) => {
@@ -144,6 +146,74 @@ export const PlaylistDetailScreen = ({ route, navigation }) => {
         reorderPlaylist(playlist.id, newSongs);
     };
 
+    const handleAddSongsToPlaylist = () => {
+        const songsToAddObjects = songs.filter(s => songsToAdd.includes(s.id));
+        addMultipleToPlaylist(playlist.id, songsToAddObjects);
+        setShowAddSongsModal(false);
+        setSongsToAdd([]);
+        showAlert('Sucesso', `${songsToAdd.length} músicas adicionadas!`);
+    };
+
+    const toggleSongToAdd = (songId) => {
+        if (songsToAdd.includes(songId)) {
+            setSongsToAdd(songsToAdd.filter(id => id !== songId));
+        } else {
+            setSongsToAdd([...songsToAdd, songId]);
+        }
+    };
+
+    const renderAddSongsModal = () => {
+        const availableSongs = songs.filter(s => !playlist.songs.some(ps => ps.id === s.id));
+
+        return (
+            <Modal
+                visible={showAddSongsModal}
+                animationType="slide"
+                onRequestClose={() => setShowAddSongsModal(false)}
+            >
+                <View style={[styles.container, { backgroundColor: theme.background }]}>
+                    <View style={[styles.topBar, { backgroundColor: theme.surface, borderBottomColor: theme.border, paddingTop: SPACING.md }]}>
+                        <TouchableOpacity onPress={() => setShowAddSongsModal(false)}>
+                            <Text style={{ color: theme.primary, fontSize: FONT_SIZES.lg }}>Cancelar</Text>
+                        </TouchableOpacity>
+                        <Text style={[styles.title, { color: theme.text }]}>Adicionar Músicas</Text>
+                        <TouchableOpacity
+                            onPress={handleAddSongsToPlaylist}
+                            disabled={songsToAdd.length === 0}
+                        >
+                            <Text style={{ color: songsToAdd.length > 0 ? theme.primary : theme.textSecondary, fontSize: FONT_SIZES.lg, fontWeight: 'bold' }}>
+                                Adicionar ({songsToAdd.length})
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <FlatList
+                        data={availableSongs}
+                        keyExtractor={item => item.id}
+                        renderItem={({ item }) => (
+                            <TouchableOpacity
+                                style={{ flexDirection: 'row', alignItems: 'center', padding: SPACING.md, borderBottomWidth: 1, borderBottomColor: theme.border }}
+                                onPress={() => toggleSongToAdd(item.id)}
+                            >
+                                <Ionicons
+                                    name={songsToAdd.includes(item.id) ? "checkbox" : "square-outline"}
+                                    size={24}
+                                    color={songsToAdd.includes(item.id) ? theme.primary : theme.textSecondary}
+                                    style={{ marginRight: SPACING.md }}
+                                />
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ color: theme.text, fontSize: FONT_SIZES.md, fontWeight: '500' }} numberOfLines={1}>{item.title}</Text>
+                                    <Text style={{ color: theme.textSecondary, fontSize: FONT_SIZES.sm }} numberOfLines={1}>{item.artist}</Text>
+                                </View>
+                            </TouchableOpacity>
+                        )}
+                        contentContainerStyle={{ paddingBottom: 50 }}
+                    />
+                </View>
+            </Modal>
+        );
+    };
+
     const renderHeader = () => (
         <View style={styles.headerContent}>
             <View style={[styles.playlistIcon, { backgroundColor: theme.primary }]}>
@@ -161,6 +231,16 @@ export const PlaylistDetailScreen = ({ route, navigation }) => {
             <Text style={[styles.songCount, { color: theme.textSecondary }]}>
                 {playlist.songs.length} {playlist.songs.length === 1 ? 'música' : 'músicas'}
             </Text>
+
+            <TouchableOpacity
+                style={[styles.reorderButton, { backgroundColor: theme.surface, borderColor: theme.primary, borderWidth: 1, marginTop: SPACING.md }]}
+                onPress={() => setShowAddSongsModal(true)}
+            >
+                <Ionicons name="add" size={20} color={theme.primary} />
+                <Text style={{ color: theme.primary, fontWeight: '600', marginLeft: 8 }}>
+                    Adicionar Músicas
+                </Text>
+            </TouchableOpacity>
 
             {!isSelectionMode && playlist.songs.length > 1 && (
                 <View style={{ flexDirection: 'row', gap: 10, marginTop: SPACING.md }}>
@@ -358,6 +438,7 @@ export const PlaylistDetailScreen = ({ route, navigation }) => {
             )}
 
             {renderRenameModal()}
+            {renderAddSongsModal()}
             <MiniPlayer onPress={() => navigation.navigate('Player')} hasTabBar={false} />
             <CustomAlert
                 visible={alertConfig.visible}

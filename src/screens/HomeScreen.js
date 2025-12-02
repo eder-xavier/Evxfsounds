@@ -23,7 +23,7 @@ export const HomeScreen = ({ navigation }) => {
     const { theme, isDarkMode } = useTheme();
     const insets = useSafeAreaInsets();
     const { t } = useLanguage();
-    const { songs, currentSong, playSong, sortBy, changeSortBy, playlists, addToPlaylist, addMultipleToPlaylist, createPlaylist, createPlaylistWithSongs, playShuffle, loadSongs } = useMusic();
+    const { songs, currentSong, playSong, sortBy, changeSortBy, playlists, addToPlaylist, addMultipleToPlaylist, createPlaylist, createPlaylistWithSongs, playShuffle, loadSongs, deleteFromDevice } = useMusic();
 
     const [showSortMenu, setShowSortMenu] = useState(false);
     const [selectedSong, setSelectedSong] = useState(null);
@@ -134,6 +134,36 @@ export const HomeScreen = ({ navigation }) => {
             console.error('Error creating playlist:', error);
             showAlert(t('error'), 'Erro ao criar playlist.');
         }
+    };
+
+    const handleDeleteFromDevice = () => {
+        showAlert(
+            'Excluir do Dispositivo',
+            `Deseja DELETAR PERMANENTEMENTE ${selectedSongs.length} música(s) do dispositivo?\n\nEsta ação não pode ser desfeita e os arquivos serão removidos permanentemente!`,
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Excluir Permanentemente',
+                    style: 'destructive',
+                    onPress: async () => {
+                        let successCount = 0;
+                        for (const songId of selectedSongs) {
+                            const song = songs.find(s => s.id === songId);
+                            if (song) {
+                                const success = await deleteFromDevice(songId, song.uri);
+                                if (success) successCount++;
+                            }
+                        }
+                        cancelSelection();
+                        if (successCount > 0) {
+                            showAlert('Sucesso', `${successCount} música(s) deletada(s) do dispositivo.`);
+                        } else {
+                            showAlert('Erro', 'Não foi possível excluir as músicas.');
+                        }
+                    },
+                },
+            ]
+        );
     };
 
     const renderSortMenu = () => (
@@ -354,12 +384,20 @@ export const HomeScreen = ({ navigation }) => {
                     {selectedSongs.length}
                 </Text>
             </View>
-            <TouchableOpacity
-                onPress={() => setShowPlaylistSelector(true)}
-                disabled={selectedSongs.length === 0}
-            >
-                <Ionicons name="add-circle" size={28} color={theme.primary} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: SPACING.lg, alignItems: 'center' }}>
+                <TouchableOpacity
+                    onPress={() => setShowPlaylistSelector(true)}
+                    disabled={selectedSongs.length === 0}
+                >
+                    <Ionicons name="add-circle" size={28} color={theme.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                    onPress={handleDeleteFromDevice}
+                    disabled={selectedSongs.length === 0}
+                >
+                    <Ionicons name="trash" size={28} color={theme.error} />
+                </TouchableOpacity>
+            </View>
         </View>
     );
 
