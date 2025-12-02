@@ -1,29 +1,50 @@
 {
   "expo": {
-    "name": "Evxfsounds",
-    "slug": "Evxfsounds",
+    "name": "Evxf Sounds",
+    "slug": "evxfsounds",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#4F46E5"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSAppleMusicUsageDescription": "Este aplicativo precisa acessar sua biblioteca de músicas para reproduzir áudio.",
+        "NSMediaLibraryUsageDescription": "Este aplicativo precisa acessar sua biblioteca de mídia para exibir suas músicas."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#4F46E5"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "READ_EXTERNAL_STORAGE",
+        "READ_MEDIA_AUDIO",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
+      "package": "com.evxf.sounds"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Permitir acesso às fotos para salvar capas de álbuns.",
+          "savePhotosPermission": "Permitir salvar imagens.",
+          "isAccessMediaLocationEnabled": true
+        }
+      ],
+      "expo-audio"
+    ]
   }
 }

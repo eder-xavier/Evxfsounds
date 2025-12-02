@@ -1,0 +1,173 @@
+export const translations = {
+    pt: {
+        // Settings
+        settings: 'Configurações',
+        appearance: 'Aparência',
+        darkMode: 'Tema Escuro',
+        library: 'Biblioteca',
+        refreshLibrary: 'Atualizar Biblioteca',
+        mediaPermission: 'Permissão de Mídia',
+        granted: 'Concedida',
+        notGranted: 'Não Concedida',
+        about: 'Sobre',
+        version: 'Versão',
+        developedBy: 'Desenvolvido por Éder Xavier',
+        language: 'Idioma',
+        selectLanguage: 'Selecione o Idioma',
+        cancel: 'Cancelar',
+
+        // Home
+        myMusic: 'Músicas',
+        songs: 'músicas',
+        song: 'música',
+        shuffle: 'Aleatório',
+        noSongs: 'Nenhuma música encontrada',
+        addSongs: 'Adicione músicas ao seu dispositivo',
+        sortBy: 'Ordenar por',
+        name: 'Nome',
+        dateAdded: 'Data de Adição',
+        dateModified: 'Data de Modificação',
+
+        // Player
+        unknownArtist: 'Artista Desconhecido',
+        unknownAlbum: 'Álbum Desconhecido',
+
+        // Playlists
+        playlists: 'Playlists',
+        newPlaylist: 'Nova Playlist',
+        addToPlaylist: 'Adicionar à playlist',
+        create: 'Criar',
+        playlistName: 'Nome da playlist',
+        success: 'Sucesso',
+        addedTo: 'Adicionado à playlist',
+        rename: 'Renomear',
+        delete: 'Excluir',
+        save: 'Salvar',
+        renamePlaylist: 'Renomear Playlist',
+        deletePlaylist: 'Excluir Playlist',
+        confirmDeletePlaylist: 'Deseja realmente excluir a playlist',
+        noPlaylists: 'Nenhuma playlist criada',
+        tapToCreate: 'Toque no botão + para criar uma',
+        newName: 'Novo nome',
+        playlistCreated: 'Playlist criada com sucesso!',
+
+        // Tabs
+        home: 'Início',
+        search: 'Buscar',
+        topPlayed: 'Mais Tocadas',
+    },
+    en: {
+        // Settings
+        settings: 'Settings',
+        appearance: 'Appearance',
+        darkMode: 'Dark Mode',
+        library: 'Library',
+        refreshLibrary: 'Refresh Library',
+        mediaPermission: 'Media Permission',
+        granted: 'Granted',
+        notGranted: 'Not Granted',
+        about: 'About',
+        version: 'Version',
+        developedBy: 'Developed by Éder Xavier',
+        language: 'Language',
+        selectLanguage: 'Select Language',
+        cancel: 'Cancel',
+
+        // Home
+        myMusic: 'Music',
+        songs: 'songs',
+        song: 'song',
+        shuffle: 'Shuffle',
+        noSongs: 'No songs found',
+        addSongs: 'Add songs to your device',
+        sortBy: 'Sort by',
+        name: 'Name',
+        dateAdded: 'Date Added',
+        dateModified: 'Date Modified',
+
+        // Player
+        unknownArtist: 'Unknown Artist',
+        unknownAlbum: 'Unknown Album',
+
+        // Playlists
+        playlists: 'Playlists',
+        newPlaylist: 'New Playlist',
+        addToPlaylist: 'Add to playlist',
+        create: 'Create',
+        playlistName: 'Playlist name',
+        success: 'Success',
+        addedTo: 'Added to playlist',
+        rename: 'Rename',
+        delete: 'Delete',
+        save: 'Save',
+        renamePlaylist: 'Rename Playlist',
+        deletePlaylist: 'Delete Playlist',
+        confirmDeletePlaylist: 'Do you really want to delete the playlist',
+        noPlaylists: 'No playlists created',
+        tapToCreate: 'Tap the + button to create one',
+        newName: 'New name',
+        playlistCreated: 'Playlist created successfully!',
+
+        // Tabs
+        home: 'Home',
+        search: 'Search',
+        topPlayed: 'Top Played',
+    },
+    fr: {
+        // Settings
+        settings: 'Paramètres',
+        appearance: 'Apparence',
+        darkMode: 'Mode Sombre',
+        library: 'Bibliothèque',
+        refreshLibrary: 'Actualiser la bibliothèque',
+        mediaPermission: 'Permission Média',
+        granted: 'Accordée',
+        notGranted: 'Non Accordée',
+        about: 'À propos',
+        version: 'Version',
+        developedBy: 'Développé par Éder Xavier',
+        language: 'Langue',
+        selectLanguage: 'Choisir la langue',
+        cancel: 'Annuler',
+
+        // Home
+        myMusic: 'Musique',
+        songs: 'chansons',
+        song: 'chanson',
+        shuffle: 'Aléatoire',
+        noSongs: 'Aucune chanson trouvée',
+        addSongs: 'Ajoutez des chansons à votre appareil',
+        sortBy: 'Trier par',
+        name: 'Nom',
+        dateAdded: 'Date d\'ajout',
+        dateModified: 'Date de modification',
+
+        // Player
+        unknownArtist: 'Artiste Inconnu',
+        unknownAlbum: 'Album Inconnu',
+
+        // Playlists
+        playlists: 'Playlists',
+        newPlaylist: 'Nouvelle Playlist',
+        addToPlaylist: 'Ajouter à la playlist',
+        create: 'Créer',
+        playlistName: 'Nom de la playlist',
+        success: 'Succès',
+        addedTo: 'Ajouté à la playlist',
+        rename: 'Renommer',
+        delete: 'Supprimer',
+        save: 'Sauvegarder',
+        renamePlaylist: 'Renommer la Playlist',
+        deletePlaylist: 'Supprimer la Playlist',
+        confirmDeletePlaylist: 'Voulez-vous vraiment supprimer la playlist',
+        noPlaylists: 'Aucune playlist créée',
+        tapToCreate: 'Appuyez sur le bouton + pour en créer une',
+        newName: 'Nouveau nom',
+        playlistCreated: 'Playlist créée avec succès !',
+
+        // Tabs
+        home: 'Accueil',
+        search: 'Recherche',
+        topPlayed: 'Plus Écoutées',
+    }
+};
