@@ -24,14 +24,14 @@ export const CustomAlert = ({ visible, title, message, buttons = [], onClose }) 
                         {buttons.map((btn, index) => (
                             <TouchableOpacity
                                 key={index}
-                                style={[
-                                    styles.button,
-                                ]}
+                                style={styles.button}
                                 onPress={() => {
-                                    if (btn.onPress) btn.onPress();
-                                    // Se o botão não tiver onPress ou se quiser fechar sempre:
-                                    // onClose(); 
-                                    // Mas geralmente o onPress do botão controla o fluxo, então deixamos o onClose para o Modal
+                                    // Fecha o modal primeiro
+                                    onClose();
+                                    // Executa a ação do botão logo após
+                                    if (btn.onPress) {
+                                        setTimeout(() => btn.onPress(), 50);
+                                    }
                                 }}
                             >
                                 <Text style={[

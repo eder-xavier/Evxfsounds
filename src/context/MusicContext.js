@@ -271,6 +271,51 @@ export const MusicProvider = ({ children }) => {
         await AsyncStorage.setItem('playlists', JSON.stringify(updatedPlaylists));
     };
 
+    const deleteFromDevice = async (songId, songUri) => {
+        try {
+            // Para o player se estiver tocando esta música
+            if (currentSong?.id === songId) {
+                await TrackPlayer.reset();
+                setCurrentSong(null);
+            }
+
+            // Deleta do dispositivo usando MediaLibrary
+            const assets = await MediaLibrary.getAssetsAsync({
+                mediaType: 'audio',
+                first: 1,
+            });
+
+            const assetToDelete = assets.assets.find(a => a.id === songId);
+
+            if (assetToDelete) {
+                await MediaLibrary.deleteAssetsAsync([assetToDelete]);
+            }
+
+            // Remove da lista local
+            const updatedSongs = songs.filter(s => s.id !== songId);
+            setSongs(updatedSongs);
+
+            // Remove das playlists
+            const updatedPlaylists = playlists.map(pl => ({
+                ...pl,
+                songs: pl.songs.filter(s => s.id !== songId)
+            }));
+            setPlaylists(updatedPlaylists);
+            await AsyncStorage.setItem('playlists', JSON.stringify(updatedPlaylists));
+
+            // Remove da contagem de plays
+            const newPlayCounts = { ...playCounts };
+            delete newPlayCounts[songId];
+            setPlayCounts(newPlayCounts);
+            await AsyncStorage.setItem('playCounts', JSON.stringify(newPlayCounts));
+
+            return true;
+        } catch (error) {
+            console.error('Error deleting from device:', error);
+            return false;
+        }
+    };
+
     const sortSongs = (songList, sortType) => {
         const sorted = [...songList];
         switch (sortType) {
@@ -496,6 +541,7 @@ export const MusicProvider = ({ children }) => {
                 loadSongs,
                 getTopPlayedSongs,
                 deleteSong,
+                deleteFromDevice,
                 playShuffle,
             }}
         >

@@ -1,0 +1,109 @@
+//====================================================================
+// PLAYLIST DETAIL SCREEN - ADICIONAR "EXCLUIR DO DISPOSITIVO"
+//====================================================================
+
+// 1. IMPORTS - Confirme que já tem (deve ter):
+import { useMusic } from '../context/MusicContext';
+import { CustomAlert } from '../components/CustomAlert';
+
+// 2. ADICIONAR deleteFromDevice no useMusic (linha 26):
+const { 
+    currentSong, 
+    playSong, 
+    removeFromPlaylist, 
+    renamePlaylist, 
+    reorderPlaylist, 
+    playlists, 
+    playShuffle,
+    deleteFromDevice  // ← ADICIONAR ESTA LINHA
+} = useMusic();
+
+// 3. ADICIONAR FUNÇÃO - Logo após a função `handleRemoveSelected` (por volta da linha 97):
+
+const handleDeleteFromDevice = () => {
+    showAlert(
+        'Excluir do Dispositivo',
+        `Deseja DELETAR PERMANENTEMENTE ${selectedSongs.length} música(s) do dispositivo?\ n\nEsta ação não pode ser desfeita e os arquivos serão removidos permanentemente!`,
+        [
+            { text: 'Cancelar', style: 'cancel' },
+            {
+                text: 'Excluir Permanentemente',
+                style: 'destructive',
+                onPress: async () => {
+                    let successCount = 0;
+                    for (const songId of selectedSongs) {
+                        // Encontra a música pelo ID
+                        const song = playlist.songs.find(s => s.id === songId);
+                        if (song) {
+                            const success = await deleteFromDevice(songId, song.uri);
+                            if (success) successCount++;
+                        }
+                    }
+                    cancelSelection();
+                    if (successCount > 0) {
+                        showAlert('Sucesso', `${successCount} música(s) deletada(s) do dispositivo.`);
+                    } else {
+                        showAlert('Erro', 'Não foi possível excluir as múscias.');
+                    }
+                },
+            },
+        ]
+    );
+};
+
+// 4. NO MODO DE SELEÇÃO - Adicionar botão "Excluir do Dispositivo"
+//    Procure onde está o código do modo de seleção (botões "Cancelar" e "Remover")
+//    Deve estar por volta da linha 200-250
+//    Adicione um botão extra entre o de "Remover" e "Cancelar":
+
+// Exemplo de como deve ficar a toolbar de seleção:
+<View style={styles.selectionActions}>
+    <TouchableOpacity
+        style={[styles.selectionButton, { backgroundColor: theme.error + '20' }]}
+        onPress={handleRemoveSelected}
+    >
+        <Ionicons name="close-circle" size={20} color={theme.error} />
+        <Text style={[styles.selectionButtonText, { color: theme.error }]}>
+            Remover da Playlist
+        </Text>
+    </TouchableOpacity>
+
+    {/* ← ADICIONAR ESTE BOTÃO */}
+    <TouchableOpacity
+        style={[styles.selectionButton, { backgroundColor: theme.error + '30' }]}
+        onPress={handleDeleteFromDevice}
+    >
+        <Ionicons name="trash" size={20} color={theme.error} />
+        <Text style={[styles.selectionButtonText, { color: theme.error }]}>
+            Excluir do Dispositivo
+        </Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity
+        style={[styles.selectionButton, { backgroundColor: theme.textSecondary + '20' }]}
+        onPress={cancelSelection}
+    >
+        <Ionicons name="close" size={20} color={theme.textSecondary} />
+        <Text style={[styles.selectionButtonText, { color: theme.textSecondary }]}>
+            Cancelar
+        </Text>
+    </TouchableOpacity>
+</View>
+
+// 5. OBSERVAÇÃO IMPORTANTE:
+// Se a toolbar de seleção não tiver espaço para 3 botões lado a lado,
+// considere empilhá-los verticalmente ou usar um layout de 2 colunas.
+//
+// Alternativa - Layout vertical:
+<View style={styles.selectionActionsColumn}>
+    <TouchableOpacity ... >Remover da Playlist</TouchableOpacity>
+    <TouchableOpacity ... >Excluir do Dispositivo</TouchableOpacity>
+    <TouchableOpacity ... >Cancelar</TouchableOpacity>
+</View>
+
+// E adicione este style:
+// selectionActionsColumn: {
+//     flexDirection: 'column',
+//     gap: SPACING.sm,
+//     paddingHorizontal: SPACING.md,
+// },

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -17,6 +17,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useMusic } from '../context/MusicContext';
 import { SPACING, FONT_SIZES, BORDER_RADIUS } from '../constants/colors';
 import { AlbumArt } from '../components/AlbumArt';
+import { CustomAlert } from '../components/CustomAlert';
 
 const { width } = Dimensions.get('window');
 
@@ -38,10 +39,34 @@ export const PlayerScreen = ({ navigation }) => {
         toggleShuffle,
         deleteSong,
         addToPlaylist,
+        deleteFromDevice,
     } = useMusic();
 
     const [showOptions, setShowOptions] = useState(false);
     const [showPlaylistSelector, setShowPlaylistSelector] = useState(false);
+
+    // Estados para CustomAlert
+    const [alertConfig, setAlertConfig] = useState({
+        visible: false,
+        title: '',
+        message: '',
+        buttons: []
+    });
+
+    // Estados para o Slider (Fix de delay)
+    const [sliderValue, setSliderValue] = useState(0);
+    const [isSliding, setIsSliding] = useState(false);
+
+    // Atualiza o slider apenas se o usuário não estiver arrastando
+    useEffect(() => {
+        if (!isSliding) {
+            setSliderValue(currentTime);
+        }
+    }, [currentTime, isSliding]);
+
+    const showAlert = (title, message, buttons = [{ text: 'OK', onPress: () => { } }]) => {
+        setAlertConfig({ visible: true, title, message, buttons });
+    };
 
     const formatTime = (seconds) => {
         const mins = Math.floor(seconds / 60);
@@ -60,19 +85,23 @@ export const PlayerScreen = ({ navigation }) => {
         }
     };
 
-    const handleDelete = () => {
-        Alert.alert(
-            "Excluir Música",
-            "Tem certeza que deseja remover esta música da sua biblioteca?",
+    const handleDeleteFromDevice = () => {
+        setShowOptions(false);
+        showAlert(
+            'Excluir Arquivo',
+            'Tem certeza que deseja DELETAR PERMANENTEMENTE este arquivo do dispositivo? Esta ação não pode ser desfeita!',
             [
-                { text: "Cancelar", style: "cancel" },
+                { text: 'Cancelar', style: 'cancel' },
                 {
-                    text: "Excluir",
-                    style: "destructive",
+                    text: 'Excluir Permanentemente',
+                    style: 'destructive',
                     onPress: async () => {
-                        await deleteSong(currentSong.id);
-                        setShowOptions(false);
-                        navigation.goBack();
+                        const success = await deleteFromDevice(currentSong.id, currentSong.uri);
+                        if (success) {
+                            navigation.goBack();
+                        } else {
+                            showAlert('Erro', 'Não foi possível excluir o arquivo.');
+                        }
                     }
                 }
             ]
@@ -83,7 +112,7 @@ export const PlayerScreen = ({ navigation }) => {
         addToPlaylist(playlist.id, currentSong);
         setShowPlaylistSelector(false);
         setShowOptions(false);
-        Alert.alert("Sucesso", "Música adicionada à playlist!");
+        showAlert('Sucesso', `Música adicionada à playlist "${playlist.name}"!`);
     };
 
     if (!currentSong) {
@@ -157,17 +186,22 @@ export const PlayerScreen = ({ navigation }) => {
             <View style={styles.progressContainer}>
                 <Slider
                     style={styles.slider}
-                    value={currentTime}
+                    value={sliderValue}
                     minimumValue={0}
                     maximumValue={duration || 1}
-                    onSlidingComplete={seekTo}
+                    onSlidingStart={() => setIsSliding(true)}
+                    onValueChange={(value) => setSliderValue(value)}
+                    onSlidingComplete={(value) => {
+                        setIsSliding(false);
+                        seekTo(value);
+                    }}
                     minimumTrackTintColor={theme.progressBar}
                     maximumTrackTintColor={theme.progressBg}
                     thumbTintColor={theme.progressBar}
                 />
                 <View style={styles.timeContainer}>
                     <Text style={[styles.time, { color: theme.textSecondary }]}>
-                        {formatTime(currentTime)}
+                        {formatTime(sliderValue)}
                     </Text>
                     <Text style={[styles.time, { color: theme.textSecondary }]}>
                         {formatTime(duration)}
@@ -259,10 +293,10 @@ export const PlayerScreen = ({ navigation }) => {
 
                         <TouchableOpacity
                             style={styles.modalOption}
-                            onPress={handleDelete}
+                            onPress={handleDeleteFromDevice}
                         >
                             <Ionicons name="trash-outline" size={24} color={theme.error} />
-                            <Text style={[styles.modalOptionText, { color: theme.error }]}>Excluir Música</Text>
+                            <Text style={[styles.modalOptionText, { color: theme.error }]}>Excluir do Dispositivo</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -319,6 +353,14 @@ export const PlayerScreen = ({ navigation }) => {
                     </View>
                 </TouchableOpacity>
             </Modal>
+
+            <CustomAlert
+                visible={alertConfig.visible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                buttons={alertConfig.buttons}
+                onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+            />
 
         </View>
     );

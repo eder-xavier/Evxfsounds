@@ -81,6 +81,7 @@ export const MiniPlayer = ({ onPress, hasTabBar = true }) => {
                 <View style={styles.songInfo}>
                     <AlbumArt
                         uri={currentSong.artwork}
+                        songUri={currentSong.uri}
                         size={40}
                         style={{ borderRadius: BORDER_RADIUS.sm, marginRight: SPACING.md }}
                         backgroundColor={theme.primary}

@@ -1,13 +1,66 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Image, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { getEmbeddedArtworkAsFile } from '../utils/AudioMetadata';
 
-export const AlbumArt = ({ uri, size = 48, style, iconSize, iconColor = '#fff', backgroundColor = '#6366f1', isPlaying = false }) => {
+export const AlbumArt = ({
+    uri,
+    songUri, // URI do arquivo de áudio para fallback nativo
+    size = 48,
+    style,
+    iconSize,
+    iconColor = '#fff',
+    backgroundColor = '#6366f1',
+    isPlaying = false
+}) => {
     const [imageError, setImageError] = useState(false);
     const [imageLoaded, setImageLoaded] = useState(false);
+    const [nativeArtworkUri, setNativeArtworkUri] = useState(null);
+    const [nativeAttempted, setNativeAttempted] = useState(false); // Evita loop
+    const isMounted = useRef(true);
 
-    // Se não tem URI ou deu erro, mostrar ícone
-    if (!uri || imageError) {
+    useEffect(() => {
+        isMounted.current = true;
+        return () => {
+            isMounted.current = false;
+        };
+    }, []);
+
+    // Tenta carregar artwork nativo quando a URI padrão falha
+    useEffect(() => {
+        // Só tenta uma vez - se já tentou e falhou, não tenta de novo
+        if (imageError && songUri && !nativeAttempted) {
+            setNativeAttempted(true); // Marca que já tentou
+
+            getEmbeddedArtworkAsFile(songUri)
+                .then(artwork => {
+                    if (artwork && isMounted.current) {
+                        setNativeArtworkUri(artwork);
+                        setImageError(false); // Reset error para tentar com nova URI
+                        setImageLoaded(false); // Reset loaded para recarregar
+                    }
+                })
+                .catch(err => {
+                    console.log('Native artwork extraction failed:', err);
+                });
+        }
+    }, [imageError, songUri, nativeAttempted]);
+
+    // Reset states quando a URI muda
+    useEffect(() => {
+        setImageError(false);
+        setImageLoaded(false);
+        setNativeArtworkUri(null);
+        setNativeAttempted(false);
+    }, [uri, songUri]);
+
+    // Decide qual URI usar
+    const effectiveUri = nativeArtworkUri || uri;
+
+    // Se não tem URI ou deu erro em ambas as tentativas, mostrar ícone
+    const shouldShowIcon = !effectiveUri || (imageError && nativeAttempted);
+
+    if (shouldShowIcon) {
         return (
             <View style={[
                 {
@@ -30,19 +83,26 @@ export const AlbumArt = ({ uri, size = 48, style, iconSize, iconColor = '#fff', 
 
     return (
         <View style={[{ width: size, height: size }, style]}>
-            <Image
-                source={{ uri }}
-                style={{
-                    width: '100%',
-                    height: '100%',
-                }}
-                resizeMode="cover"
-                onError={() => {
-                    console.log('Image load error for URI:', uri);
-                    setImageError(true);
-                }}
-                onLoad={() => setImageLoaded(true)}
-            />
+            {effectiveUri && (
+                <Image
+                    source={{ uri: effectiveUri }}
+                    style={{
+                        width: '100%',
+                        height: '100%',
+                    }}
+                    resizeMode="cover"
+                    onError={() => {
+                        if (isMounted.current) {
+                            setImageError(true);
+                        }
+                    }}
+                    onLoad={() => {
+                        if (isMounted.current) {
+                            setImageLoaded(true);
+                        }
+                    }}
+                />
+            )}
             {/* Mostrar ícone enquanto carrega */}
             {!imageLoaded && !imageError && (
                 <View style={{

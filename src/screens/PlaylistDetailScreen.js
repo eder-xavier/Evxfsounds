@@ -23,7 +23,7 @@ export const PlaylistDetailScreen = ({ route, navigation }) => {
     const { playlist: initialPlaylist } = route.params;
     const { theme, isDarkMode } = useTheme();
     const insets = useSafeAreaInsets();
-    const { currentSong, playSong, removeFromPlaylist, renamePlaylist, reorderPlaylist, playlists, playShuffle } = useMusic();
+    const { currentSong, playSong, removeFromPlaylist, renamePlaylist, reorderPlaylist, playlists, playShuffle, deleteFromDevice } = useMusic();
 
     const playlist = playlists.find(p => p.id === initialPlaylist.id) || initialPlaylist;
 
@@ -90,6 +90,36 @@ export const PlaylistDetailScreen = ({ route, navigation }) => {
                             await removeFromPlaylist(playlist.id, songId);
                         }
                         cancelSelection();
+                    },
+                },
+            ]
+        );
+    };
+
+    const handleDeleteFromDevice = () => {
+        showAlert(
+            'Excluir do Dispositivo',
+            `Deseja DELETAR PERMANENTEMENTE ${selectedSongs.length} música(s) do dispositivo?\n\nEsta ação não pode ser desfeita e os arquivos serão removidos permanentemente!`,
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Excluir Permanentemente',
+                    style: 'destructive',
+                    onPress: async () => {
+                        let successCount = 0;
+                        for (const songId of selectedSongs) {
+                            const song = playlist.songs.find(s => s.id === songId);
+                            if (song) {
+                                const success = await deleteFromDevice(songId, song.uri);
+                                if (success) successCount++;
+                            }
+                        }
+                        cancelSelection();
+                        if (successCount > 0) {
+                            showAlert('Sucesso', `${successCount} música(s) deletada(s) do dispositivo.`);
+                        } else {
+                            showAlert('Erro', 'Não foi possível excluir as múscias.');
+                        }
                     },
                 },
             ]
@@ -178,12 +208,22 @@ export const PlaylistDetailScreen = ({ route, navigation }) => {
                     {selectedSongs.length}
                 </Text>
             </View>
-            <TouchableOpacity
-                onPress={handleRemoveSelected}
-                disabled={selectedSongs.length === 0}
-            >
-                <Ionicons name="trash" size={24} color={theme.error} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: SPACING.lg }}>
+                <TouchableOpacity
+                    onPress={handleRemoveSelected}
+                    disabled={selectedSongs.length === 0}
+                    style={{ alignItems: 'center' }}
+                >
+                    <Ionicons name="remove-circle-outline" size={24} color={theme.text} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                    onPress={handleDeleteFromDevice}
+                    disabled={selectedSongs.length === 0}
+                    style={{ alignItems: 'center' }}
+                >
+                    <Ionicons name="trash-outline" size={24} color={theme.error} />
+                </TouchableOpacity>
+            </View>
         </View>
     );
 

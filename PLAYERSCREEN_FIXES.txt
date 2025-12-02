@@ -1,0 +1,103 @@
+//====================================================================
+// PLAYER SCREEN - CORREÇÕES A APLICAR
+//====================================================================
+
+//1. IMPORTS - Adicionar no topo do arquivo:
+import React, { useState, useEffect } from 'react';
+import { CustomAlert } from '../components/CustomAlert';
+
+//2 ESTADOS - Adicionar junto com os outros estados:
+const [alertConfig, setAlertConfig] = useState({ 
+    visible: false, 
+    title: '', 
+    message: '', 
+    buttons: []
+});
+
+const [sliderValue, setSliderValue] = useState(0);
+const [isSliding, setIsSliding] = useState(false);
+
+// 3. useEffect - Adicionar para controlar o slider:
+useEffect(() => {
+    if (!isSliding) {
+        setSliderValue(currentTime);
+    }
+}, [currentTime, isSliding]);
+
+// 4. FUNÇÕES - Adicionar estas funções junto com as outras:
+
+const showAlert = (title, message, buttons = [{ text: 'OK', onPress: () => {} }]) => {
+    setAlertConfig({ visible: true, title, message, buttons });
+};
+
+const handleDeleteFromDevice = () => {
+    setShowOptions(false);
+    showAlert(
+        'Excluir Arquivo',
+        'Tem certeza que deseja DELETAR PERMANENTEMENTE este arquivo do dispositivo? Esta ação não pode ser desfeita!',
+        [
+            { text: 'Cancelar', style: 'cancel' },
+            {
+                text: 'Excluir Permanentemente',
+                style: 'destructive',
+                onPress: async () => {
+                    const success = await deleteFromDevice(currentSong.id, currentSong.uri);
+                    if (success) {
+                        navigation.goBack();
+                    } else {
+                        showAlert('Erro', 'Não foi possível excluir o arquivo.');
+                    }
+                }
+            }
+        ]
+    );
+};
+
+const handleAddToPlaylist = (playlist) => {
+    addToPlaylist(playlist.id, currentSong);
+    setShowPlaylistSelector(false);
+    setShowOptions(false);
+    showAlert('Sucesso', `Música adicionada à playlist "${playlist.name}"!`);
+};
+
+// 5. SLIDER - Substituir o <Slider> atual por:
+<Slider
+    style={styles.slider}
+    value={sliderValue}
+    minimumValue={0}
+    maximumValue={duration || 1}
+    onSlidingStart={() => setIsSliding(true)}
+    onValueChange={(value) => setSliderValue(value)}
+    onSlidingComplete={(value) => {
+        setIsSliding(false);
+        seekTo(value);
+    }}
+    minimumTrackTintColor={theme.progressBar}
+    maximumTrackTintColor={theme.progressBg}
+    thumbTintColor={theme.progressBar}
+/>
+
+// 6. TEMPO EXIBIDO - Trocar `currentTime` por `sliderValue`:
+<Text style={[styles.time, { color: theme.textSecondary }]}>
+    {formatTime(sliderValue)}  {/* ← USAR sliderValue */}
+</Text>
+
+// 7. MODAL DE OPÇÕES - Trocar o botão "Excluir Música" por:
+ <TouchableOpacity
+    style={styles.modalOption}
+    onPress={handleDeleteFromDevice}
+>
+    <Ionicons name="trash-outline" size={24} color={theme.error} />
+    <Text style={[styles.modalOptionText, { color: theme.error }]}>
+        Excluir do Dispositivo
+    </Text>
+</TouchableOpacity>
+
+// 8. CUSTOM ALERT - Adicionar antes do </View> final do component:
+<CustomAlert
+    visible={alertConfig.visible}
+    title={alertConfig.title}
+    message={alertConfig.message}
+    buttons={alertConfig.buttons}
+    onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+/>

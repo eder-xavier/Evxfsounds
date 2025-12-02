@@ -40,6 +40,7 @@ export const SongItem = ({ song, onPress, onLongPress, isPlaying, isSelectionMod
             ) : (
                 <AlbumArt
                     uri={song.artwork}
+                    songUri={song.uri}
                     size={48}
                     style={{ borderRadius: BORDER_RADIUS.sm, marginRight: SPACING.md }}
                     backgroundColor={theme.primary}
