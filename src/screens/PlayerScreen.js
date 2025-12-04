@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -7,20 +7,71 @@ import {
     Dimensions,
     StatusBar,
     Modal,
-    Alert,
     ScrollView,
-    Image,
+    Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
+import { useProgress } from 'react-native-track-player';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
 import { useMusic } from '../context/MusicContext';
 import { useLanguage } from '../context/LanguageContext';
-import { SPACING, FONT_SIZES, BORDER_RADIUS } from '../constants/colors';
 import { AlbumArt } from '../components/AlbumArt';
 import { CustomAlert } from '../components/CustomAlert';
 
 const { width } = Dimensions.get('window');
+
+const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
+// Slider simplificado ao máximo
+const ProgressSlider = ({ seekTo, theme }) => {
+    const { position, duration } = useProgress(1000);
+    const [localPosition, setLocalPosition] = useState(0);
+    const isSlidingRef = useRef(false);
+
+    useEffect(() => {
+        if (!isSlidingRef.current) {
+            setLocalPosition(position);
+        }
+    }, [position]);
+
+    return (
+        <View style={styles.progressWrapper}>
+            <Slider
+                style={styles.slider}
+                value={localPosition}
+                minimumValue={0}
+                maximumValue={duration > 0 ? duration : 1}
+                onSlidingStart={() => {
+                    isSlidingRef.current = true;
+                }}
+                onValueChange={(value) => {
+                    setLocalPosition(value);
+                }}
+                onSlidingComplete={(value) => {
+                    seekTo(value);
+                    isSlidingRef.current = false;
+                }}
+                minimumTrackTintColor={theme.primary}
+                maximumTrackTintColor={theme.textSecondary + '50'}
+                thumbTintColor={theme.primary}
+            />
+            <View style={styles.timeContainer}>
+                <Text style={[styles.timeText, { color: theme.textSecondary }]}>
+                    {formatTime(localPosition)}
+                </Text>
+                <Text style={[styles.timeText, { color: theme.textSecondary }]}>
+                    {formatTime(duration)}
+                </Text>
+            </View>
+        </View>
+    );
+};
 
 export const PlayerScreen = ({ navigation }) => {
     const { theme, isDarkMode } = useTheme();
@@ -28,8 +79,6 @@ export const PlayerScreen = ({ navigation }) => {
     const {
         currentSong,
         isPlaying,
-        currentTime,
-        duration,
         repeatMode,
         shuffle,
         playlists,
@@ -39,15 +88,12 @@ export const PlayerScreen = ({ navigation }) => {
         seekTo,
         toggleRepeat,
         toggleShuffle,
-        deleteSong,
         addToPlaylist,
         deleteFromDevice,
     } = useMusic();
 
     const [showOptions, setShowOptions] = useState(false);
     const [showPlaylistSelector, setShowPlaylistSelector] = useState(false);
-
-    // Estados para CustomAlert
     const [alertConfig, setAlertConfig] = useState({
         visible: false,
         title: '',
@@ -55,36 +101,15 @@ export const PlayerScreen = ({ navigation }) => {
         buttons: []
     });
 
-    // Estados para o Slider (Fix de delay)
-    // Estados para o Slider (Fix de delay)
-    const [sliderValue, setSliderValue] = useState(0);
-    const [isSliding, setIsSliding] = useState(false);
-
-    // Atualiza o slider apenas se o usuário não estiver arrastando
-    useEffect(() => {
-        if (!isSliding) {
-            setSliderValue(currentTime);
-        }
-    }, [currentTime, isSliding]);
-
     const showAlert = (title, message, buttons = [{ text: 'OK', onPress: () => { } }]) => {
         setAlertConfig({ visible: true, title, message, buttons });
     };
 
-    const formatTime = (seconds) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
-    };
-
     const getRepeatIcon = () => {
         switch (repeatMode) {
-            case 'one':
-                return 'repeat-outline';
-            case 'all':
-                return 'repeat';
-            default:
-                return 'repeat';
+            case 'one': return 'repeat';
+            case 'all': return 'repeat';
+            default: return 'repeat';
         }
     };
 
@@ -119,246 +144,143 @@ export const PlayerScreen = ({ navigation }) => {
         showAlert(t('success'), `${t('addedTo')} "${playlist.name}"!`);
     };
 
+    const gradientColors = isDarkMode
+        ? [theme.background, '#1a1a1a', '#000000']
+        : [theme.background, '#f5f5f5', '#e0e0e0'];
+
     if (!currentSong) {
         return (
-            <View style={[styles.container, { backgroundColor: theme.background }]}>
-                <StatusBar
-                    barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-                    backgroundColor={theme.background}
-                />
-                <TouchableOpacity
-                    style={styles.closeButton}
-                    onPress={() => navigation.goBack()}
-                >
-                    <Ionicons name="chevron-down" size={28} color={theme.text} />
+            <LinearGradient colors={gradientColors} style={styles.container}>
+                <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+                <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
+                    <Ionicons name="chevron-down" size={32} color={theme.text} />
                 </TouchableOpacity>
                 <View style={styles.emptyContainer}>
-                    <Ionicons name="musical-notes-outline" size={64} color={theme.textSecondary} />
-                    <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                        {t('noSongPlaying')}
-                    </Text>
+                    <Ionicons name="musical-notes-outline" size={80} color={theme.textSecondary} />
+                    <Text style={[styles.emptyText, { color: theme.textSecondary }]}>{t('noSongPlaying')}</Text>
                 </View>
-            </View>
+            </LinearGradient>
         );
     }
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <StatusBar
-                barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-                backgroundColor={theme.background}
-            />
+        <LinearGradient colors={gradientColors} style={styles.container}>
+            <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
 
             <View style={styles.header}>
-                <TouchableOpacity
-                    style={styles.headerButton}
-                    onPress={() => navigation.goBack()}
-                >
-                    <Ionicons name="chevron-down" size={28} color={theme.text} />
+                <TouchableOpacity style={styles.headerButton} onPress={() => navigation.goBack()}>
+                    <Ionicons name="chevron-down" size={32} color={theme.text} />
                 </TouchableOpacity>
-
                 <Text style={[styles.headerTitle, { color: theme.text }]}>{t('nowPlaying')}</Text>
-
-                <TouchableOpacity
-                    style={styles.headerButton}
-                    onPress={() => setShowOptions(true)}
-                >
-                    <Ionicons name="ellipsis-horizontal" size={24} color={theme.text} />
+                <TouchableOpacity style={styles.headerButton} onPress={() => setShowOptions(true)}>
+                    <Ionicons name="ellipsis-horizontal" size={28} color={theme.text} />
                 </TouchableOpacity>
             </View>
 
-            <View style={styles.artworkContainer}>
-                <AlbumArt
-                    uri={currentSong.artwork}
-                    songUri={currentSong.uri}
-                    size={width - 80}
-                    style={{ borderRadius: BORDER_RADIUS.xl }}
-                    backgroundColor={theme.primary}
-                    iconColor={theme.surface}
-                    iconSize={120}
-                />
+            <View style={styles.artworkWrapper}>
+                <View style={[styles.artworkShadow, { shadowColor: theme.text }]}>
+                    <AlbumArt
+                        uri={currentSong.artwork}
+                        songUri={currentSong.uri}
+                        size={width * 0.7}
+                        style={{ borderRadius: (width * 0.7) / 2 }}
+                        backgroundColor={theme.surface}
+                        iconColor={theme.textSecondary}
+                        iconSize={100}
+                    />
+                </View>
             </View>
 
-            <View style={styles.infoContainer}>
-                <Text style={[styles.title, { color: theme.text }]} numberOfLines={2}>
+            <View style={styles.infoWrapper}>
+                <Text style={[styles.songTitle, { color: theme.text }]} numberOfLines={1}>
                     {currentSong.title}
                 </Text>
-                <Text style={[styles.artist, { color: theme.textSecondary }]} numberOfLines={1}>
+                <Text style={[styles.artistName, { color: theme.textSecondary }]} numberOfLines={1}>
                     {currentSong.artist}
                 </Text>
             </View>
 
-            <View style={styles.progressContainer}>
-                <Slider
-                    style={styles.slider}
-                    value={sliderValue}
-                    minimumValue={0}
-                    maximumValue={duration > 0 ? duration : 1}
-                    onSlidingStart={() => setIsSliding(true)}
-                    onValueChange={(value) => {
-                        if (!isSliding) setIsSliding(true);
-                        setSliderValue(value);
-                    }}
-                    onSlidingComplete={async (value) => {
-                        await seekTo(value);
-                        // Pequeno delay para evitar pulo visual
-                        setTimeout(() => {
-                            setIsSliding(false);
-                        }, 800);
-                    }}
-                    minimumTrackTintColor={theme.progressBar}
-                    maximumTrackTintColor={theme.progressBg}
-                    thumbTintColor={theme.progressBar}
-                />
-                <View style={styles.timeContainer}>
-                    <Text style={[styles.time, { color: theme.textSecondary }]}>
-                        {formatTime(sliderValue)}
-                    </Text>
-                    <Text style={[styles.time, { color: theme.textSecondary }]}>
-                        {formatTime(duration)}
-                    </Text>
-                </View>
-            </View>
+            <ProgressSlider seekTo={seekTo} theme={theme} />
 
-            <View style={styles.controlsContainer}>
-                <TouchableOpacity
-                    style={styles.secondaryButton}
-                    onPress={toggleShuffle}
-                >
-                    <Ionicons
-                        name={shuffle ? 'shuffle' : 'shuffle-outline'}
-                        size={24}
-                        color={shuffle ? theme.primary : theme.textSecondary}
-                    />
+            <View style={styles.controlsWrapper}>
+                <TouchableOpacity onPress={toggleShuffle} style={styles.secondaryControl}>
+                    <Ionicons name="shuffle" size={28} color={shuffle ? theme.primary : theme.textSecondary} />
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={playPrevious} style={styles.mainControl}>
+                    <Ionicons name="play-skip-back" size={42} color={theme.text} />
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    style={styles.controlButton}
-                    onPress={playPrevious}
-                >
-                    <Ionicons name="play-skip-back" size={36} color={theme.text} />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[styles.playButton, { backgroundColor: theme.primary }]}
                     onPress={togglePlayPause}
+                    style={[styles.playPauseButton, { backgroundColor: theme.primary, shadowColor: theme.primary }]}
                 >
-                    <Ionicons
-                        name={isPlaying ? 'pause' : 'play'}
-                        size={40}
-                        color={theme.surface}
-                    />
+                    <Ionicons name={isPlaying ? 'pause' : 'play'} size={48} color="#FFFFFF" />
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                    style={styles.controlButton}
-                    onPress={playNext}
-                >
-                    <Ionicons name="play-skip-forward" size={36} color={theme.text} />
+                <TouchableOpacity onPress={playNext} style={styles.mainControl}>
+                    <Ionicons name="play-skip-forward" size={42} color={theme.text} />
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                    style={styles.secondaryButton}
-                    onPress={toggleRepeat}
-                >
-                    <Ionicons
-                        name={getRepeatIcon()}
-                        size={24}
-                        color={repeatMode !== 'off' ? theme.primary : theme.textSecondary}
-                    />
+                <TouchableOpacity onPress={toggleRepeat} style={styles.secondaryControl}>
+                    <Ionicons name={getRepeatIcon()} size={28} color={repeatMode !== 'off' ? theme.primary : theme.textSecondary} />
                     {repeatMode === 'one' && (
-                        <View style={[styles.repeatBadge, { backgroundColor: theme.primary }]}>
-                            <Text style={[styles.repeatBadgeText, { color: theme.surface }]}>1</Text>
+                        <View style={[styles.badge, { backgroundColor: theme.primary }]}>
+                            <Text style={styles.badgeText}>1</Text>
                         </View>
                     )}
                 </TouchableOpacity>
             </View>
 
-            {/* Options Modal */}
             <Modal
                 visible={showOptions}
                 transparent={true}
                 animationType="slide"
                 onRequestClose={() => setShowOptions(false)}
             >
-                <TouchableOpacity
-                    style={styles.modalOverlay}
-                    activeOpacity={1}
-                    onPress={() => setShowOptions(false)}
-                >
+                <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowOptions(false)}>
                     <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
                         <View style={styles.modalHeader}>
                             <Text style={[styles.modalTitle, { color: theme.text }]}>{t('options')}</Text>
                         </View>
-
-                        <TouchableOpacity
-                            style={styles.modalOption}
-                            onPress={() => {
-                                setShowOptions(false);
-                                setShowPlaylistSelector(true);
-                            }}
-                        >
+                        <TouchableOpacity style={styles.modalOption} onPress={() => { setShowOptions(false); setShowPlaylistSelector(true); }}>
                             <Ionicons name="add-circle-outline" size={24} color={theme.text} />
                             <Text style={[styles.modalOptionText, { color: theme.text }]}>{t('addToPlaylist')}</Text>
                         </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={styles.modalOption}
-                            onPress={handleDeleteFromDevice}
-                        >
+                        <TouchableOpacity style={styles.modalOption} onPress={handleDeleteFromDevice}>
                             <Ionicons name="trash-outline" size={24} color={theme.error} />
                             <Text style={[styles.modalOptionText, { color: theme.error }]}>{t('deleteFromDevice')}</Text>
                         </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={styles.cancelButton}
-                            onPress={() => setShowOptions(false)}
-                        >
+                        <TouchableOpacity style={styles.cancelButton} onPress={() => setShowOptions(false)}>
                             <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>{t('cancel')}</Text>
                         </TouchableOpacity>
                     </View>
                 </TouchableOpacity>
             </Modal>
 
-            {/* Playlist Selector Modal */}
             <Modal
                 visible={showPlaylistSelector}
                 transparent={true}
                 animationType="slide"
                 onRequestClose={() => setShowPlaylistSelector(false)}
             >
-                <TouchableOpacity
-                    style={styles.modalOverlay}
-                    activeOpacity={1}
-                    onPress={() => setShowPlaylistSelector(false)}
-                >
-                    <View style={[styles.modalContent, { backgroundColor: theme.surface, maxHeight: '50%' }]}>
+                <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowPlaylistSelector(false)}>
+                    <View style={[styles.modalContent, { backgroundColor: theme.surface, maxHeight: '60%' }]}>
                         <View style={styles.modalHeader}>
                             <Text style={[styles.modalTitle, { color: theme.text }]}>{t('selectPlaylist')}</Text>
                         </View>
-
                         <ScrollView>
                             {playlists.map(playlist => (
-                                <TouchableOpacity
-                                    key={playlist.id}
-                                    style={styles.modalOption}
-                                    onPress={() => handleAddToPlaylist(playlist)}
-                                >
+                                <TouchableOpacity key={playlist.id} style={styles.modalOption} onPress={() => handleAddToPlaylist(playlist)}>
                                     <Ionicons name="list" size={24} color={theme.primary} />
                                     <Text style={[styles.modalOptionText, { color: theme.text }]}>{playlist.name}</Text>
                                 </TouchableOpacity>
                             ))}
                             {playlists.length === 0 && (
-                                <Text style={{ padding: 20, textAlign: 'center', color: theme.textSecondary }}>
-                                    {t('noPlaylists')}
-                                </Text>
+                                <Text style={{ padding: 20, textAlign: 'center', color: theme.textSecondary }}>{t('noPlaylists')}</Text>
                             )}
                         </ScrollView>
-
-                        <TouchableOpacity
-                            style={styles.cancelButton}
-                            onPress={() => setShowPlaylistSelector(false)}
-                        >
+                        <TouchableOpacity style={styles.cancelButton} onPress={() => setShowPlaylistSelector(false)}>
                             <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>{t('cancel')}</Text>
                         </TouchableOpacity>
                     </View>
@@ -372,34 +294,34 @@ export const PlayerScreen = ({ navigation }) => {
                 buttons={alertConfig.buttons}
                 onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
             />
-
-        </View>
+        </LinearGradient>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingTop: SPACING.xl,
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 40,
+        paddingBottom: 20,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: SPACING.md,
-        marginBottom: SPACING.md,
+        paddingHorizontal: 20,
+        marginBottom: 20,
     },
     headerButton: {
-        padding: SPACING.sm,
+        padding: 10,
     },
     headerTitle: {
-        fontSize: FONT_SIZES.base,
+        fontSize: 18,
         fontWeight: '600',
+        letterSpacing: 0.5,
     },
     closeButton: {
         alignSelf: 'flex-start',
-        padding: SPACING.md,
-        marginLeft: SPACING.sm,
+        padding: 20,
     },
     emptyContainer: {
         flex: 1,
@@ -407,43 +329,42 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     emptyText: {
-        fontSize: FONT_SIZES.lg,
-        marginTop: SPACING.md,
+        fontSize: 20,
+        marginTop: 20,
+        fontWeight: '500',
     },
-    artworkContainer: {
+    artworkWrapper: {
         alignItems: 'center',
-        marginTop: SPACING.md,
-        marginBottom: SPACING.xl,
-    },
-    artwork: {
-        width: width - 80,
-        height: width - 80,
-        borderRadius: BORDER_RADIUS.xl,
         justifyContent: 'center',
-        alignItems: 'center',
-        elevation: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
+        marginVertical: 30,
+    },
+    artworkShadow: {
+        shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.3,
-        shadowRadius: 8,
+        shadowRadius: 20,
+        elevation: 15,
+        borderRadius: 1000,
     },
-    infoContainer: {
-        paddingHorizontal: SPACING.xl,
-        marginBottom: SPACING.xl,
+    infoWrapper: {
+        alignItems: 'center',
+        paddingHorizontal: 30,
+        marginBottom: 30,
     },
-    title: {
-        fontSize: FONT_SIZES['3xl'],
+    songTitle: {
+        fontSize: 24,
         fontWeight: 'bold',
         textAlign: 'center',
-        marginBottom: SPACING.sm,
+        marginBottom: 8,
     },
-    artist: {
-        fontSize: FONT_SIZES.lg,
+    artistName: {
+        fontSize: 18,
         textAlign: 'center',
+        opacity: 0.8,
     },
-    progressContainer: {
-        paddingHorizontal: SPACING.xl,
-        marginBottom: SPACING.xl,
+    progressWrapper: {
+        width: '100%',
+        paddingHorizontal: 25,
+        marginBottom: 20,
     },
     slider: {
         width: '100%',
@@ -452,88 +373,92 @@ const styles = StyleSheet.create({
     timeContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginTop: -SPACING.sm,
+        marginTop: -5,
     },
-    time: {
-        fontSize: FONT_SIZES.sm,
+    timeText: {
+        fontSize: 12,
+        fontWeight: '500',
     },
-    controlsContainer: {
+    controlsWrapper: {
         flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: SPACING.xl,
-        gap: SPACING.lg,
+        paddingHorizontal: 40,
+        marginBottom: 40,
     },
-    playButton: {
-        width: 72,
-        height: 72,
-        borderRadius: 36,
+    playPauseButton: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
         justifyContent: 'center',
         alignItems: 'center',
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 8,
     },
-    controlButton: {
-        padding: SPACING.sm,
+    mainControl: {
+        padding: 10,
     },
-    secondaryButton: {
-        padding: SPACING.sm,
+    secondaryControl: {
+        padding: 10,
         position: 'relative',
     },
-    repeatBadge: {
+    badge: {
         position: 'absolute',
-        top: 4,
-        right: 4,
-        width: 16,
-        height: 16,
-        borderRadius: 8,
+        top: 5,
+        right: 5,
+        width: 14,
+        height: 14,
+        borderRadius: 7,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    repeatBadgeText: {
-        fontSize: 10,
+    badgeText: {
+        fontSize: 9,
         fontWeight: 'bold',
+        color: '#FFF',
     },
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.6)',
         justifyContent: 'flex-end',
     },
     modalContent: {
-        borderTopLeftRadius: BORDER_RADIUS.xl,
-        borderTopRightRadius: BORDER_RADIUS.xl,
-        padding: SPACING.lg,
-        paddingBottom: SPACING.xl,
+        borderTopLeftRadius: 25,
+        borderTopRightRadius: 25,
+        padding: 25,
+        paddingBottom: 40,
     },
     modalHeader: {
         alignItems: 'center',
-        marginBottom: SPACING.lg,
+        marginBottom: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(150,150,150,0.1)',
+        paddingBottom: 15,
     },
     modalTitle: {
-        fontSize: FONT_SIZES.lg,
+        fontSize: 18,
         fontWeight: 'bold',
     },
     modalOption: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: SPACING.md,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0,0,0,0.05)',
+        paddingVertical: 15,
     },
     modalOptionText: {
-        fontSize: FONT_SIZES.base,
-        marginLeft: SPACING.md,
+        fontSize: 16,
+        marginLeft: 15,
     },
     cancelButton: {
-        marginTop: SPACING.lg,
+        marginTop: 20,
         alignItems: 'center',
-        padding: SPACING.md,
+        padding: 15,
+        backgroundColor: 'rgba(150,150,150,0.1)',
+        borderRadius: 12,
     },
     cancelButtonText: {
-        fontSize: FONT_SIZES.base,
+        fontSize: 16,
         fontWeight: '600',
     },
 });
